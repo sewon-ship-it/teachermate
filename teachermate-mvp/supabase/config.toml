@@ -1,0 +1,10 @@
+# supabase CLI 설정 (필요한 부분만)
+[auth]
+site_url = "http://localhost:5173"
+additional_redirect_urls = ["http://localhost:5173"]
+# 로그인 링크 유효 시간(초)
+[auth.email]
+otp_expiry = 3600
+
+[functions.ai-flow]
+verify_jwt = true
