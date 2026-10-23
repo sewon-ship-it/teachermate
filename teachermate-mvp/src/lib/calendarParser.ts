@@ -1,10 +1,22 @@
 import { findDates } from './dates';
+import { newId } from './id';
 
 export interface CalendarEvent {
   date: string;
   endDate: string | null;
   title: string;
   line: string;
+}
+
+export interface ParsedCalendarItem {
+  id: string;
+  date: string; // 'YYYY-MM-DD' 또는 ''
+  endDate: string | null;
+  title: string;
+  dutyId: string | null;
+  included: boolean;
+  needsReview: boolean;
+  sourceLine: string;
 }
 
 const WEEKDAY = /\(\s*[월화수목금토일]\s*\)/g;
@@ -49,4 +61,21 @@ export function parseAcademicCalendar(text: string, schoolYear: number): Calenda
     events.push({ date: start.iso, endDate, title: title.slice(0, 80), line });
   }
   return events;
+}
+
+/**
+ * 텍스트 기반 파싱 결과를 미리보기 테이블용 ParsedCalendarItem으로 변환
+ */
+export function parseTextToItems(text: string, schoolYear: number, defaultDutyId: string | null = null): ParsedCalendarItem[] {
+  const events = parseAcademicCalendar(text, schoolYear);
+  return events.map((e) => ({
+    id: newId(),
+    date: e.date,
+    endDate: e.endDate,
+    title: e.title,
+    dutyId: defaultDutyId,
+    included: true,
+    needsReview: !e.date,
+    sourceLine: e.line,
+  }));
 }

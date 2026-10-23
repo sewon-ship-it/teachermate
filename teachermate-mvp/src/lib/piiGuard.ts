@@ -78,3 +78,13 @@ export function scanPii(text: string): PiiResult {
 export function hasBlockingPii(...texts: string[]): boolean {
   return texts.some((t) => scanPii(t).blocked);
 }
+
+/**
+ * 정리된 학사력 행사 목록을 기준으로 개인정보를 검사한다.
+ * 달력의 날짜 숫자 나열로 인한 주민번호/전화번호 오탐을 방지한다.
+ */
+export function scanPiiForEvents(events: { title: string; date?: string }[]): PiiResult {
+  const titles = events.map((e) => e.title).join('\n');
+  return scanPii(titles);
+}
+

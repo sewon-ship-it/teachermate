@@ -154,3 +154,86 @@ describe('chatSearch', () => {
     expect(r.sources.some((s) => s.type === 'card')).toBe(true);
   });
 });
+
+import fs from 'fs';
+import path from 'path';
+import * as XLSX from 'xlsx';
+import { parseTextToItems } from './calendarParser';
+import { extractCalendarFromPdfBuffer } from './pdfCalendarParser';
+import { extractCalendarFromExcelBuffer } from './excelCalendarParser';
+import { scanPiiForEvents } from './piiGuard';
+
+describe('학사력 자동 정리 테스트 (Grid, List, Excel, PII)', () => {
+  it('1. 목록형 텍스트 샘플에서 날짜와 행사를 추출한다', () => {
+    const sample = `3.2.(월) 입학식 및 시업식
+3.13.(금) 학부모 총회
+4.15 과학의 날 행사
+5.5.(화) 어린이날`;
+    const items = parseTextToItems(sample, 2026);
+    expect(items).toHaveLength(4);
+    expect(items[0].date).toBe('2026-03-02');
+    expect(items[0].title).toBe('입학식 및 시업식');
+    expect(items[1].date).toBe('2026-03-13');
+    expect(items[2].date).toBe('2026-04-15');
+    expect(items[3].date).toBe('2026-05-05');
+    expect(items.every((it) => it.included)).toBe(true);
+  });
+
+  it('2. 엑셀(XLSX) 바이너리 샘플에서 셀 단위로 날짜와 행사를 추출한다', () => {
+    const wb = XLSX.utils.book_new();
+    const wsData = [
+      ['날짜', '행사명', '비고'],
+      ['2026-03-02', '시업식 및 입학식', '급식없음'],
+      ['2026-04-15', '과학의 날', '전학년'],
+      ['2026-05-01', '개교기념일', '재량휴업일'],
+    ];
+    const ws = XLSX.utils.aoa_to_sheet(wsData);
+    XLSX.utils.book_append_sheet(wb, ws, '학사력');
+    const buffer = XLSX.write(wb, { type: 'array', bookType: 'xlsx' });
+
+    const items = extractCalendarFromExcelBuffer(buffer, 2026);
+    expect(items.length).toBeGreaterThanOrEqual(3);
+    const titles = items.map((it) => it.title);
+    expect(titles).toContain('시업식 및 입학식');
+    expect(titles).toContain('과학의 날');
+    expect(titles).toContain('개교기념일');
+  });
+
+  it('3. 달력 표(Grid) 형태의 중대부초 2026 학사력 PDF에서 행사를 추출한다', async () => {
+    const pdfPath = path.resolve(__dirname, '../../docs/2026학사력_중대부초.pdf');
+    if (!fs.existsSync(pdfPath)) return; // 파일 존재 시 검증
+
+    const buffer = fs.readFileSync(pdfPath);
+    const arrayBuffer = buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength);
+
+    const items = await extractCalendarFromPdfBuffer(arrayBuffer, 2026);
+    expect(items.length).toBeGreaterThan(50); // 1년치 행사 수십~백여 개 이상
+    const titles = items.map((it) => it.title);
+
+    // 주요 행사명 검증
+    expect(titles.some((t) => t.includes('입학식'))).toBe(true);
+    expect(titles.some((t) => t.includes('시업식'))).toBe(true);
+    expect(titles.some((t) => t.includes('삼일절'))).toBe(true);
+    expect(titles.some((t) => t.includes('대체휴일'))).toBe(true);
+  });
+
+  it('4. 개인정보 검사: 달력 숫자 나열은 오탐되지 않고 실제 개인정보는 차단된다', () => {
+    // 달력 숫자와 일반 행사명 -> 오탐 없음
+    const safeEvents = [
+      { date: '2026-03-01', title: '1 2 3 4 5 6 삼일절' },
+      { date: '2026-03-02', title: '7 8 9 10 11 12 대체휴일' },
+      { date: '2026-03-03', title: '시업식(급식 없음, 11시 30분 하교)' },
+    ];
+    const safeResult = scanPiiForEvents(safeEvents);
+    expect(safeResult.blocked).toBe(false);
+
+    // 진짜 주민번호나 휴대전화가 포함된 경우 -> 차단
+    const leakEvents = [
+      { date: '2026-03-04', title: '학부모 상담 010-1234-5678 연락' },
+    ];
+    const leakResult = scanPiiForEvents(leakEvents);
+    expect(leakResult.blocked).toBe(true);
+    expect(leakResult.findings.some((f) => f.type === 'mobile')).toBe(true);
+  });
+});
+
