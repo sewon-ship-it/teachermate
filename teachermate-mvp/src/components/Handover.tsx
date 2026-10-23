@@ -2,44 +2,33 @@ import { useState } from 'react';
 import type { Duty, HandoverCard, Task } from '../lib/types';
 import { scanPii } from '../lib/piiGuard';
 import { newId } from '../lib/id';
-import { formatKoreanDate } from '../lib/dates';
+import { schoolYearOf, todayISO } from '../lib/dates';
+import { buildHandoverBundle, buildSchoolGuide, cardToText, draftCardFromYear } from '../lib/handoverDoc';
 import { CopyButton, PiiNotice, download } from './ui';
 
 interface Props {
   cards: HandoverCard[];
   duties: Duty[];
   tasks: Task[];
+  schoolName: string;
   onSave: (c: HandoverCard) => Promise<void>;
   onDelete: (id: string) => Promise<void>;
 }
 
-function cardToText(c: HandoverCard, duty: Duty | undefined, tasks: Task[]): string {
-  const yearly = tasks
-    .filter((t) => t.status === 'confirmed' && t.dutyId === c.dutyId && t.dueDate)
-    .sort((a, b) => (a.dueDate! < b.dueDate! ? -1 : 1))
-    .map((t) => `- ${formatKoreanDate(t.dueDate!)} ${t.title}`);
-  return [
-    `[인수인계] ${c.title}`,
-    duty ? `업무분장: ${duty.name}` : '',
-    '',
-    '■ 요령',
-    c.tips,
-    '',
-    '■ 원본 위치',
-    c.locationPath || '(없음)',
-    '',
-    '■ 1년 일정',
-    ...yearly,
-  ].join('\n');
-}
-
-export function Handover({ cards, duties, tasks, onSave, onDelete }: Props) {
+export function Handover({ cards, duties, tasks, schoolName, onSave, onDelete }: Props) {
   const [editing, setEditing] = useState<HandoverCard | null>(null);
+  const [fromDutyId, setFromDutyId] = useState(duties[0]?.id ?? '');
   const pii = scanPii(editing ? `${editing.title}\n${editing.tips}\n${editing.locationPath}` : '');
+  const sy = schoolYearOf(todayISO());
 
   const blank = (): HandoverCard => ({
     id: newId(), dutyId: duties[0]?.id ?? null, title: '', tips: '', locationPath: '', updatedAt: '',
   });
+
+  const draftFromYear = () => {
+    const duty = duties.find((d) => d.id === fromDutyId);
+    if (duty) setEditing(draftCardFromYear(duty, tasks));
+  };
 
   return (
     <section className="panel">
@@ -52,6 +41,38 @@ export function Handover({ cards, duties, tasks, onSave, onDelete }: Props) {
           + 카드 새로 쓰기
         </button>
       </div>
+
+      <div className="field-row">
+        <label>
+          1년 기록으로 카드 초안 만들기 <small>확정한 일의 메모·체크리스트·원본 위치를 모은다</small>
+          <select value={fromDutyId} onChange={(e) => setFromDutyId(e.target.value)}>
+            {duties.map((d) => (
+              <option key={d.id} value={d.id}>{d.name}</option>
+            ))}
+          </select>
+        </label>
+        <button type="button" className="btn" disabled={!fromDutyId} onClick={draftFromYear}>
+          📝 초안 만들기
+        </button>
+      </div>
+
+      <div className="actions">
+        <button
+          type="button"
+          className="btn"
+          onClick={() => download(`${sy}학년도_인수인계서.txt`, buildHandoverBundle(duties, tasks, cards, sy), 'text/plain;charset=utf-8')}
+        >
+          📦 학년 말 인수인계서 일괄 내려받기
+        </button>
+        <button
+          type="button"
+          className="btn"
+          onClick={() => download(`${schoolName}_업무안내서.txt`, buildSchoolGuide(schoolName, duties, tasks, cards, sy), 'text/plain;charset=utf-8')}
+        >
+          🏫 전입·신규 교사용 업무 안내서
+        </button>
+      </div>
+      <p className="hint">일괄 인수인계서에는 업무분장마다 원본 위치 확인 목록이 붙는다. 넘기기 전에 위치가 그대로인지 확인한다.</p>
 
       {editing && (
         <div className="card-editor">

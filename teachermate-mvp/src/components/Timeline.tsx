@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import type { Duty, Task } from '../lib/types';
+import type { Duty, HandoverCard, Task } from '../lib/types';
 import { monthOf, parseISO, yearForMonth, schoolYearOf } from '../lib/dates';
 import { newId } from '../lib/id';
 import { YearStrip } from './YearStrip';
@@ -8,6 +8,7 @@ import { TaskItem } from './TaskItem';
 interface Props {
   tasks: Task[];
   duties: Duty[];
+  cards: HandoverCard[];
   today: string;
   month: number;
   setMonth: (m: number) => void;
@@ -70,6 +71,7 @@ export function Timeline(p: Props) {
       key={t.id}
       task={t}
       duties={p.duties}
+      cards={p.cards}
       today={p.today}
       onSave={p.onSave}
       onDelete={p.onDelete}

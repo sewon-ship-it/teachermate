@@ -1,12 +1,14 @@
 import { useState } from 'react';
-import type { Duty, Task } from '../lib/types';
+import type { Duty, HandoverCard, Task } from '../lib/types';
 import { formatKoreanDate } from '../lib/dates';
 import { newId } from '../lib/id';
+import { relatedCards } from '../lib/handoverDoc';
 import { CopyButton, DDay, StatusBadge } from './ui';
 
 interface Props {
   task: Task;
   duties: Duty[];
+  cards: HandoverCard[];
   today: string;
   onSave: (t: Task) => Promise<void>;
   onDelete: (id: string) => Promise<void>;
@@ -17,12 +19,13 @@ interface Props {
   onClose?: () => void;
 }
 
-export function TaskItem({ task, duties, today, onSave, onDelete, onToggleDone, forceOpen, onOpen, onClose }: Props) {
+export function TaskItem({ task, duties, cards, today, onSave, onDelete, onToggleDone, forceOpen, onOpen, onClose }: Props) {
   const [localOpen, setLocalOpen] = useState(false);
   const open = forceOpen ?? localOpen;
   const [draft, setDraft] = useState<Task>(task);
   const [newItem, setNewItem] = useState('');
   const duty = duties.find((d) => d.id === task.dutyId);
+  const tipCards = relatedCards(task, cards);
 
   const startEdit = () => {
     setDraft(task);
@@ -170,6 +173,21 @@ export function TaskItem({ task, duties, today, onSave, onDelete, onToggleDone, 
                   <p>{s.excerpt}</p>
                   <footer>
                     {s.docTitle} · {s.verified ? '원문과 일치 확인됨' : '원문에서 찾지 못함 — 직접 대조 필요'}
+                  </footer>
+                </blockquote>
+              ))}
+            </div>
+          )}
+
+          {tipCards.length > 0 && (
+            <div className="sources">
+              <h4>선임자 요령 (인수인계 카드)</h4>
+              {tipCards.map((c) => (
+                <blockquote key={c.id}>
+                  <p style={{ whiteSpace: 'pre-wrap' }}>{c.tips || '요령이 비어 있다.'}</p>
+                  <footer>
+                    {c.title}
+                    {c.locationPath && <> · 원본 위치 {c.locationPath} <CopyButton text={c.locationPath} label="경로 복사" /></>}
                   </footer>
                 </blockquote>
               ))}

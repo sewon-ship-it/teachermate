@@ -5,6 +5,7 @@ import { parseAcademicCalendar } from './calendarParser';
 import { extractFlowRuleBased, isVerbatim } from './flowExtractor';
 import { groupReminders } from './reminders';
 import { buildIcs } from './ics';
+import { draftCardFromYear, buildHandoverBundle, buildSchoolGuide, relatedCards } from './handoverDoc';
 import type { Task } from './types';
 
 describe('dates', () => {
@@ -237,3 +238,45 @@ describe('학사력 자동 정리 테스트 (Grid, List, Excel, PII)', () => {
   });
 });
 
+
+describe('handoverDoc', () => {
+  const duty = { id: 'd1', name: '교지 담당', kind: 'duty' as const };
+  const base: Task = {
+    id: 't', dutyId: 'd1', title: '', note: '', dueDate: null, status: 'confirmed', origin: 'manual',
+    checklist: [], sources: [], locationPath: '', done: false, updatedAt: '',
+  };
+  const tasks: Task[] = [
+    { ...base, id: 't1', title: '원고 수합', dueDate: '2026-10-30', note: '마감 3일 전 안내', locationPath: 'NAS > 교지 > 원고',
+      checklist: [{ id: 'c1', text: '미제출 학급 확인', done: true }] },
+    { ...base, id: 't2', title: '인쇄 품의', dueDate: '2026-11-20', locationPath: 'NAS > 교지 > 원고' },
+    { ...base, id: 't3', title: '초안 일', dueDate: '2026-09-01', status: 'draft', note: '빠져야 함' },
+  ];
+  const card = { id: 'k1', dutyId: 'd1', title: '교지 요령', tips: '9월에 견적', locationPath: 'NAS > 교지', updatedAt: '' };
+
+  it('1년 확정 기록으로 카드 초안을 만들고 초안 일은 뺀다', () => {
+    const c = draftCardFromYear(duty, tasks);
+    expect(c.dutyId).toBe('d1');
+    expect(c.tips).toContain('마감 3일 전 안내');
+    expect(c.tips).toContain('[했음] 미제출 학급 확인');
+    expect(c.tips).not.toContain('빠져야 함');
+    expect(c.locationPath).toBe('NAS > 교지 > 원고');
+  });
+  it('일괄 인수인계서에 원본 위치 확인 목록이 붙는다', () => {
+    const doc = buildHandoverBundle([duty], tasks, [card], 2026);
+    expect(doc).toContain('■ 교지 담당');
+    expect(doc).toContain('[ ] NAS > 교지');
+    expect(doc).toContain('[ ] NAS > 교지 > 원고');
+    expect(doc).toContain('인쇄 품의');
+  });
+  it('업무 안내서는 월별로 묶고 업무분장명을 붙인다', () => {
+    const doc = buildSchoolGuide('테스트초', [duty], tasks, [card], 2026);
+    expect(doc).toContain('▶ 10월');
+    expect(doc).toContain('[교지 담당] 원고 수합');
+    expect(doc.indexOf('▶ 10월')).toBeLessThan(doc.indexOf('▶ 11월'));
+    expect(doc).not.toContain('초안 일');
+  });
+  it('같은 업무분장의 카드만 연결한다', () => {
+    expect(relatedCards({ dutyId: 'd1' }, [card])).toHaveLength(1);
+    expect(relatedCards({ dutyId: null }, [card])).toHaveLength(0);
+  });
+});

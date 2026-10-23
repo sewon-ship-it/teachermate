@@ -170,7 +170,7 @@ function Workspace({ repo, school, signOut, onCreateInvite }: WorkspaceProps) {
         <main id="main">
           {view === 'timeline' && (
             <Timeline
-              tasks={data.tasks} duties={data.duties} today={today}
+              tasks={data.tasks} duties={data.duties} cards={data.cards} today={today}
               month={month} setMonth={setMonth}
               myDuties={myDuties} setMyDuties={setMyDuties}
               onSave={saveTask}
@@ -192,6 +192,7 @@ function Workspace({ repo, school, signOut, onCreateInvite }: WorkspaceProps) {
           {view === 'handover' && (
             <Handover
               cards={data.cards} duties={data.duties} tasks={data.tasks}
+              schoolName={school?.name ?? '우리 학교'}
               onSave={(c: HandoverCard) => run(() => repo.saveCard(c), '카드를 저장했다.')}
               onDelete={(id) => run(() => repo.deleteCard(id), '카드를 삭제했다.')}
             />
