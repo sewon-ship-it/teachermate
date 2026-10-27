@@ -1,0 +1,1558 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>TeacherMate 프로토타입 v4 (스마트 분석 & AI 연동)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=Gowun+Batang:wght@700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#F3F6F5; --sheet:#FFFFFF; --ink:#1E2940; --ink-2:#55607A; --rule:#D7DEE0;
+  --red:#C6362B; --red-bg:#FBE7E4; --hl:#F6DA5E; --hl-ink:#3A3000; --ok:#1D7A52; --ok-bg:#E3F3EA;
+  --c-hr:#2F4B8F; --c-g6:#2E7D4F; --c-mag:#7A4BA8; --c-neis:#1B7C86; --c-sci:#A8530C;
+  --focus:#2F6FEB; --nav:#1E2940; --nav-ink:#FFFFFF;
+  color-scheme:light; box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --paper:#141A22; --sheet:#1C2430; --ink:#E7ECF3; --ink-2:#A3AEC0; --rule:#2E3948;
+    --red:#FF7A6E; --red-bg:#3A1F1E; --hl:#E7C844; --hl-ink:#2A2300; --ok:#6FCB92; --ok-bg:#1B3226;
+    --c-hr:#8FA9F0; --c-g6:#6FCB92; --c-mag:#C29BEA; --c-neis:#5FC6CF; --c-sci:#F0A35E; --focus:#7FA8FF;
+    --nav:#0F141B; --nav-ink:#E7ECF3; color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#141A22; --sheet:#1C2430; --ink:#E7ECF3; --ink-2:#A3AEC0; --rule:#2E3948;
+  --red:#FF7A6E; --red-bg:#3A1F1E; --hl:#E7C844; --hl-ink:#2A2300; --ok:#6FCB92; --ok-bg:#1B3226;
+  --c-hr:#8FA9F0; --c-g6:#6FCB92; --c-mag:#C29BEA; --c-neis:#5FC6CF; --c-sci:#F0A35E; --focus:#7FA8FF;
+  --nav:#0F141B; --nav-ink:#E7ECF3; color-scheme:dark;
+}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--paper);color:var(--ink);font:15px/1.6 "IBM Plex Sans KR","Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--nav)}
+button,input,textarea,select{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+.wrap{max-width:1120px;margin:0 auto;padding:0 20px}
+[hidden]{display:none!important}
+
+/* 상단: NEIS처럼 메뉴 한 줄 + 업무분장 줄 */
+header.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5}
+.nav{background:var(--nav);color:var(--nav-ink)}
+.nav .wrap{display:flex;align-items:center;gap:6px;min-height:56px;flex-wrap:wrap}
+.brand{font-family:"Gowun Batang",serif;font-size:21px;margin-right:18px;white-space:nowrap}
+.brand small{font-family:"IBM Plex Sans KR",sans-serif;font-size:12px;opacity:.7;margin-left:8px}
+.menu{display:flex;gap:2px;flex-wrap:wrap}
+.menu button{border:0;background:none;color:inherit;opacity:.72;font-weight:600;padding:16px 14px 13px;border-bottom:3px solid transparent;cursor:pointer;white-space:nowrap}
+.menu button[aria-current="page"]{opacity:1;border-color:var(--hl)}
+.menu .cnt{display:inline-block;min-width:20px;padding:0 6px;margin-left:5px;border-radius:10px;background:var(--red);color:#fff;font-size:12px;line-height:20px}
+.navright{margin-left:auto;display:flex;align-items:center;gap:8px}
+.gear{border:1px solid rgba(255,255,255,.3);background:none;color:inherit;border-radius:8px;padding:5px 12px;font-size:13px;cursor:pointer}
+.dutybar{background:var(--sheet);border-bottom:1px solid var(--rule)}
+.dutybar .wrap{display:flex;align-items:center;gap:4px;overflow-x:auto;min-height:46px}
+.dutybar .lbl{font-size:12.5px;color:var(--ink-2);margin-right:6px;white-space:nowrap}
+.dtab{border:0;background:none;padding:12px 12px 9px;border-bottom:3px solid transparent;font-weight:600;color:var(--ink-2);cursor:pointer;white-space:nowrap;display:flex;align-items:center;gap:6px}
+.dtab i{width:9px;height:9px;border-radius:50%;background:var(--cat)}
+.dtab[aria-selected="true"]{color:var(--ink);border-color:var(--cat,var(--ink))}
+.dtab small{font-weight:500;color:var(--ink-2)}
+
+main{padding:22px 0 64px}
+.demo-note{font-size:12.5px;color:var(--ink-2);margin:0 0 16px}
+.grid2{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:24px;align-items:start}
+.panel{background:var(--sheet);border:1px solid var(--rule);border-radius:10px;padding:18px}
+.panel h2{font-size:17px;margin:0 0 4px}
+.sub{font-size:13px;color:var(--ink-2);margin:0 0 12px}
+h1.page{font-family:"Gowun Batang",serif;font-size:28px;margin:0 0 4px;line-height:1.2}
+.lead{color:var(--ink-2);margin:0 0 18px;max-width:72ch}
+
+/* 타임라인 */
+.months{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));border:1px solid var(--rule);border-radius:10px;overflow:hidden;background:var(--sheet)}
+.months button{border:0;border-right:1px solid var(--rule);background:none;padding:10px 0 8px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px}
+.months button:last-child{border-right:0}
+.months .m{font-family:"Gowun Batang",serif;font-size:20px;line-height:1}
+.months .dots{display:flex;gap:2px;height:6px}
+.months .dots i{width:6px;height:6px;border-radius:50%;background:var(--cat)}
+.months .n{font-size:11px;color:var(--ink-2)}
+.months button[aria-selected="true"]{background:var(--ink);color:var(--sheet)}
+.months button[aria-selected="true"] .n{color:inherit;opacity:.7}
+.months button.now .m::after{content:"";display:block;width:16px;height:2px;margin:3px auto 0;background:var(--red)}
+.month-head{display:flex;align-items:baseline;gap:12px;margin:24px 0 8px;flex-wrap:wrap}
+.month-head h2{font-family:"Gowun Batang",serif;font-size:32px;margin:0;line-height:1.1}
+.month-head p{margin:0;color:var(--ink-2);font-size:14px}
+.daylist{list-style:none;margin:0;padding:0;border-left:2px solid var(--rule);margin-left:30px}
+.daylist li{position:relative;padding:0 0 4px 22px}
+.daylist .date{position:absolute;left:-52px;width:40px;text-align:right;top:14px;font-weight:700;font-size:15px}
+.daylist .date small{display:block;font-weight:500;font-size:11px;color:var(--ink-2)}
+.daylist li::before{content:"";position:absolute;left:-7px;top:20px;width:12px;height:12px;border-radius:50%;background:var(--sheet);border:2.5px solid var(--cat)}
+.daylist li.done::before{background:var(--cat)}
+.task{width:100%;text-align:left;background:var(--sheet);border:1px solid var(--rule);border-left:4px solid var(--cat);border-radius:8px;padding:10px 14px;margin:6px 0;cursor:pointer;display:grid;grid-template-columns:1fr auto;gap:2px 12px}
+.task.draft{border-style:dashed;border-left-style:solid}
+.task:hover{border-color:var(--cat)}
+.task .t{font-weight:600}
+li.done .task .t{text-decoration:line-through;color:var(--ink-2)}
+.task .meta{grid-column:1;font-size:12.5px;color:var(--ink-2);display:flex;gap:10px;flex-wrap:wrap}
+.task .right{grid-row:1/3;grid-column:2;align-self:center;display:flex;flex-direction:column;align-items:flex-end;gap:4px}
+.dday{font-weight:700;font-size:13px;padding:1px 8px;border-radius:4px;white-space:nowrap}
+.dday.urgent{background:var(--red);color:#fff}
+.dday.soon{background:var(--red-bg);color:var(--red)}
+.dday.past{color:var(--ink-2);font-weight:500}
+.badge{font-size:11.5px;font-weight:600;padding:1px 7px;border-radius:4px;border:1px dashed var(--ink-2);color:var(--ink-2);white-space:nowrap}
+.badge.ok{border:0;background:var(--hl);color:var(--hl-ink)}
+.badge.auto{border:0;background:#E3EFFE;color:#2F4B8F}
+.flag{font-size:11.5px;font-weight:700;padding:1px 7px;border-radius:4px;background:var(--red-bg);color:var(--red);white-space:nowrap}
+.empty{padding:28px;border:1px dashed var(--rule);border-radius:10px;color:var(--ink-2);text-align:center;background:var(--sheet)}
+.empty .btn{margin-top:10px}
+
+/* 알림 패널 */
+.aside h2{font-size:16px;margin:0 0 2px}
+.aside h3{font-size:13px;color:var(--ink-2);margin:16px 0 6px;font-weight:600}
+.rem{display:flex;gap:10px;align-items:center;width:100%;text-align:left;background:none;border:0;border-bottom:1px solid var(--rule);padding:8px 0;cursor:pointer}
+.rem .t{flex:1;font-size:14px;line-height:1.4}
+.rem .t small{display:block;color:var(--cat);font-weight:600;font-size:11.5px}
+.drafts{margin-top:14px;padding:10px 12px;border-radius:8px;background:var(--paper);font-size:13px;color:var(--ink-2)}
+.drafts b{color:var(--ink)}
+
+/* 공통 버튼 */
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:10px}
+.btn{border:1px solid var(--ink);background:var(--ink);color:var(--sheet);border-radius:8px;padding:8px 16px;font-weight:600;cursor:pointer;font-size:14px}
+.btn.ghost{background:transparent;color:var(--ink);border-color:var(--rule)}
+.btn.small{padding:4px 10px;font-size:13px}
+.btn:disabled{opacity:.5;cursor:default}
+.muted{color:var(--ink-2);font-size:13px}
+.warn{margin-top:12px;padding:12px 14px;border-radius:8px;background:var(--red-bg);color:var(--red);font-size:13.5px}
+.warn strong{display:block;margin-bottom:2px}
+.info{margin-top:12px;padding:10px 14px;border-radius:8px;border:1px dashed var(--rule);font-size:13px;color:var(--ink-2)}
+.good{margin-top:12px;padding:10px 14px;border-radius:8px;background:var(--ok-bg);color:var(--ok);font-size:13.5px}
+textarea,input[type=text],input[type=date],input[type=number],input[type=password],select{border:1px solid var(--rule);background:var(--paper);border-radius:8px;padding:8px 10px}
+textarea{width:100%;min-height:150px;line-height:1.65;resize:vertical}
+.thinking{display:flex;align-items:center;gap:10px;color:var(--ink-2);padding:24px 0}
+.thinking i{width:10px;height:10px;border-radius:50%;background:var(--ink-2);animation:p 1s infinite alternate}
+@keyframes p{to{opacity:.2}}
+@media (prefers-reduced-motion:reduce){.thinking i{animation:none}}
+
+/* 자료 올리기 */
+.kinds{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-bottom:14px}
+.kind{border:1.5px solid var(--rule);background:var(--sheet);border-radius:10px;padding:12px 14px;text-align:left;cursor:pointer}
+.kind b{display:block;font-size:15px}
+.kind span{font-size:12.5px;color:var(--ink-2)}
+.kind[aria-pressed="true"]{border-color:var(--ink);box-shadow:inset 0 0 0 1px var(--ink)}
+.drop{position:relative;border:2px dashed var(--rule);border-radius:10px;padding:22px;text-align:center;background:var(--paper);color:var(--ink-2)}
+.drop.over{border-color:var(--c-neis);color:var(--c-neis);background:var(--sheet)}
+.drop strong{color:var(--ink)}
+.filebtn{position:relative;overflow:hidden}
+.filebtn input{position:absolute;inset:0;opacity:0;cursor:pointer}
+.detected{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:14px 0 0;padding:10px 14px;border-radius:8px;background:var(--hl);color:var(--hl-ink);font-size:14px}
+.detected select{background:var(--sheet);padding:3px 8px}
+#upOut{margin-top:18px}
+
+/* 행사 → 업무 제안 */
+.evt{border:1px solid var(--rule);border-radius:10px;background:var(--sheet);margin:10px 0;overflow:hidden}
+.evt-head{display:flex;gap:12px;align-items:baseline;padding:10px 14px;background:var(--paper);border-bottom:1px solid var(--rule)}
+.evt-head b{font-size:15px}
+.evt-head .d{font-weight:700;min-width:84px}
+.evt-head .q{font-size:12px;color:var(--ink-2);margin-left:auto}
+.sug{display:grid;grid-template-columns:auto 70px auto 1fr auto;gap:10px;align-items:center;padding:8px 14px;border-top:1px solid var(--rule);font-size:14px}
+.sug:first-of-type{border-top:0}
+.sug input{width:18px;height:18px;accent-color:var(--ink)}
+.sug .dd{font-size:13px;color:var(--ink-2)}
+.chip{display:inline-block;font-size:12px;font-weight:600;padding:1px 8px;border-radius:999px;border:1.5px solid var(--cat);color:var(--cat);white-space:nowrap}
+.sug .why{display:block;font-size:12px;color:var(--ink-2)}
+.src{font-size:11.5px;padding:1px 7px;border-radius:4px;background:var(--paper);color:var(--ink-2);white-space:nowrap}
+.src.ai{background:var(--hl);color:var(--hl-ink)}
+.src.rule{background:#E3EFFE;color:#2F4B8F}
+.sticky-act{position:sticky;bottom:calc(12px + env(safe-area-inset-bottom,0px));display:flex;gap:10px;align-items:center;flex-wrap:wrap;background:var(--sheet);border:1px solid var(--rule);border-radius:10px;padding:10px 14px;margin-top:14px;box-shadow:0 6px 24px rgba(0,0,0,.08)}
+
+/* 업무표 결과 */
+.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:14px 0}
+.stat{border:1px solid var(--rule);border-radius:8px;padding:10px 12px;background:var(--paper)}
+.stat b{display:block;font-family:"Gowun Batang",serif;font-size:26px;line-height:1.1}
+.stat span{font-size:12.5px;color:var(--ink-2)}
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.cols h4{margin:4px 0 6px;font-size:14px}
+.cols ul{margin:0;padding-left:18px;font-size:13.5px}
+
+/* 공문 흐름도 */
+ol.steps{list-style:none;counter-reset:s;margin:0;padding:0}
+ol.steps li{counter-increment:s;position:relative;padding:0 0 18px 46px}
+ol.steps li::before{content:counter(s);position:absolute;left:0;top:0;width:30px;height:30px;border-radius:50%;background:var(--ink);color:var(--sheet);display:grid;place-items:center;font-weight:700;font-size:14px}
+ol.steps li:not(:last-child)::after{content:"";position:absolute;left:14px;top:32px;bottom:2px;width:2px;background:var(--rule)}
+.steps .st{font-weight:600}
+.steps .due{font-size:12.5px;color:var(--red);font-weight:600;margin-left:6px}
+.steps .dt{font-size:13.5px;color:var(--ink-2);margin:2px 0 4px}
+.qbtn{background:none;border:0;padding:0;color:var(--c-neis);font-size:12.5px;font-weight:600;cursor:pointer;text-decoration:underline;text-underline-offset:3px}
+.qbtn.miss{color:var(--red);text-decoration:none;cursor:default}
+blockquote{margin:6px 0 0;padding:8px 12px;border-left:3px solid var(--hl);background:var(--paper);font-size:13px;border-radius:0 6px 6px 0}
+mark{background:var(--hl);color:var(--hl-ink);padding:0 2px;border-radius:2px}
+.checks{margin:14px 0 0;padding:12px 14px;border-radius:8px;background:var(--paper)}
+.checks h4{margin:0 0 6px;font-size:14px}
+.checks ul{margin:0;padding-left:20px;font-size:13.5px}
+
+/* 인수인계 */
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px}
+.card{background:var(--sheet);border:1px solid var(--rule);border-top:4px solid var(--cat);border-radius:10px;padding:14px 16px}
+.card h3{margin:2px 0 8px;font-size:16px}
+.card .tips{white-space:pre-line;font-size:13.5px;max-height:220px;overflow:auto}
+.path{display:flex;gap:8px;align-items:center;padding:7px 10px;border:1px solid var(--rule);border-radius:8px;font-size:13px;margin-top:10px}
+.path code{flex:1;font-family:inherit;word-break:break-all}
+
+/* 물어보기 */
+.chat{display:flex;flex-direction:column;gap:12px;margin-bottom:14px}
+.msg{max-width:78ch;padding:10px 14px;border-radius:10px;font-size:14.5px;white-space:pre-line}
+.msg.me{align-self:flex-end;background:var(--ink);color:var(--sheet)}
+.msg.bot{align-self:flex-start;background:var(--sheet);border:1px solid var(--rule)}
+.msg .ev{display:flex;flex-direction:column;gap:6px;margin-top:10px;white-space:normal}
+.msg .ev button{text-align:left;border:1px solid var(--rule);border-left:4px solid var(--cat);background:var(--paper);border-radius:8px;padding:6px 10px;cursor:pointer;font-size:13px}
+.msg .unsure{display:inline-block;margin-top:8px;font-size:12px;font-weight:700;color:var(--red)}
+.ask{display:flex;gap:8px}
+.ask input{flex:1;border:1px solid var(--rule);background:var(--sheet);border-radius:8px;padding:10px 12px}
+.examples{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+.examples button{border:1px solid var(--rule);background:var(--sheet);border-radius:999px;padding:4px 12px;font-size:13px;cursor:pointer}
+
+/* 대화상자 */
+dialog{border:0;padding:0;border-radius:14px;max-width:580px;width:calc(100% - 24px);background:var(--sheet);color:var(--ink);box-shadow:0 20px 60px rgba(0,0,0,.3)}
+dialog::backdrop{background:rgba(15,20,30,.45)}
+.dlg{padding:22px 22px 18px;max-height:85vh;overflow:auto}
+.dlg .cat{font-size:12.5px;font-weight:700;color:var(--cat)}
+.dlg .title{width:100%;font-size:19px;font-weight:700;border:0;border-bottom:1px solid var(--rule);background:none;border-radius:0;padding:4px 0;margin:2px 0 10px}
+.dlg .line{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:6px;font-size:13.5px;color:var(--ink-2)}
+.dlg h4{font-size:13px;color:var(--ink-2);margin:16px 0 6px;font-weight:600}
+.cl{list-style:none;margin:0;padding:0}
+.cl label{display:flex;gap:10px;align-items:flex-start;padding:7px 0;border-bottom:1px solid var(--rule);cursor:pointer}
+.cl input{width:18px;height:18px;margin-top:3px;accent-color:var(--cat)}
+.cl input:checked + span{text-decoration:line-through;color:var(--ink-2)}
+.tip{padding:12px 14px;border-radius:8px;background:var(--paper);font-size:14px;white-space:pre-line}
+.tip b{display:block;font-size:12px;color:var(--ink-2);margin-bottom:2px}
+.tip.alert{background:var(--red-bg)}
+.dlg-foot{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-top:18px;padding-top:14px;border-top:1px solid var(--rule)}
+.guide{font-size:12px;color:var(--ink-2);margin-top:12px}
+.metric{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:8px 0}
+.metric div{background:var(--paper);border-radius:8px;padding:8px 10px}
+.metric b{display:block;font-size:20px}
+.metric span{font-size:12px;color:var(--ink-2)}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--sheet);padding:10px 18px;border-radius:8px;font-size:14px;z-index:20;opacity:0;pointer-events:none;transition:opacity .2s;max-width:90vw}
+.toast.on{opacity:1}
+
+@media (max-width:860px){
+  .grid2{grid-template-columns:1fr}
+  .kinds,.stats{grid-template-columns:1fr 1fr}
+  .cols{grid-template-columns:1fr}
+  .months{grid-template-columns:repeat(6,minmax(0,1fr))}
+  .months button:nth-child(6){border-right:0}
+  .months button:nth-child(-n+6){border-bottom:1px solid var(--rule)}
+  .sug{grid-template-columns:auto 1fr auto;}
+  .sug .dd{grid-column:2}
+  .navright{margin-left:auto}
+  .brand{margin-right:0;padding-top:8px}
+  .brand small{display:none}
+  .menu{order:3;width:100%;flex-wrap:nowrap;overflow-x:auto}
+  .menu button{padding:9px 12px 8px}
+  .nav .wrap{gap:0 6px}
+  .dtab{padding:9px 10px 7px}
+}
+
+/* ── v3: 업무분장 메가 메뉴 ── */
+:root{--c-6:#B03A6F}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--c-6:#F08FB8}}
+:root[data-theme="dark"]{--c-6:#F08FB8}
+.dutybar{position:relative}
+.dutybar .wrap{gap:2px;flex-wrap:wrap;overflow:visible}
+.dtab .dept{font-size:11px;font-weight:500;color:var(--ink-2);margin-right:-2px}
+.orgbtn{margin-left:auto;border:1px solid var(--rule);background:var(--paper);border-radius:8px;padding:5px 12px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap}
+.orgbtn[aria-expanded="true"]{background:var(--ink);color:var(--sheet);border-color:var(--ink)}
+.mega{position:absolute;left:0;right:0;top:100%;background:var(--sheet);border-bottom:1px solid var(--rule);box-shadow:0 18px 40px rgba(0,0,0,.14);max-height:calc(100vh - 160px);overflow:auto;z-index:6}
+.mega .wrap{display:block;padding:18px 20px 16px}
+.mega-head{display:flex;gap:12px;align-items:baseline;flex-wrap:wrap;margin-bottom:12px}
+.mega-head b{font-size:16px}
+.mega-cols{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:18px 22px}
+.dept{min-width:0}
+.dept h3{font-size:14.5px;margin:0 0 6px;padding-bottom:6px;border-bottom:2px solid var(--ink)}
+.team{margin:0 0 10px}
+.team-n{display:flex;gap:6px;align-items:center;font-weight:600;font-size:13.5px;cursor:pointer}
+.team-n input,.it input{width:15px;height:15px;accent-color:var(--ink);margin:0}
+.it{display:flex;gap:6px;align-items:flex-start;font-size:12.5px;color:var(--ink-2);padding:2px 0 2px 21px;cursor:pointer;line-height:1.4}
+.it input{margin-top:2px}
+.it.on,.team-n.on{color:var(--ink)}
+.it.on{font-weight:600}
+.support{margin-top:16px;padding-top:12px;border-top:1px dashed var(--rule)}
+.support h4{margin:0 0 6px;font-size:13px}
+.support .mega-cols{grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:10px 22px}
+.support .row2{font-size:12.5px;color:var(--ink-2);line-height:1.5}
+.support .row2 b{color:var(--ink);font-weight:600}
+
+/* ── v3: 지금 시작할 일 ── */
+.nowp{border:1.5px solid var(--hl);background:var(--sheet);border-radius:10px;padding:14px 16px;margin-bottom:16px}
+.nowp h2{font-size:16px;margin:0 0 2px}
+.nowp .item{display:grid;grid-template-columns:86px auto 1fr auto;gap:10px;align-items:center;padding:8px 0;border-top:1px solid var(--rule);font-size:14px}
+.nowp .item:first-of-type{border-top:0}
+.nowp .item .ev{display:block;font-size:12px;color:var(--ink-2)}
+.nowp .when{font-size:13px;font-weight:600}
+.nowp .when.late{color:var(--red)}
+
+/* ── v3: 알림 행, 이력, 안내문 ── */
+.rem{display:flex;gap:8px;align-items:center;border-bottom:1px solid var(--rule);padding:8px 0}
+.rem .open{flex:1;display:flex;gap:8px;align-items:center;text-align:left;background:none;border:0;padding:0;cursor:pointer}
+.rem .open .t{flex:1}
+.msgbtn{border:1px solid var(--rule);background:var(--paper);border-radius:6px;padding:2px 8px;font-size:12px;cursor:pointer;white-space:nowrap}
+.hist{list-style:none;margin:0;padding:0;border-left:2px solid var(--rule)}
+.hist li{position:relative;padding:4px 0 8px 14px;font-size:13.5px}
+.hist li::before{content:"";position:absolute;left:-6px;top:10px;width:10px;height:10px;border-radius:50%;background:var(--sheet);border:2px solid var(--ink-2)}
+.hist b{font-size:12px;color:var(--ink-2);display:block}
+.msgtabs{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}
+.msgtabs button{border:1px solid var(--rule);background:var(--sheet);border-radius:999px;padding:4px 12px;font-size:13px;cursor:pointer}
+.msgtabs button[aria-pressed="true"]{background:var(--ink);color:var(--sheet);border-color:var(--ink)}
+.snips{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+.snips button{border:1px dashed var(--ink-2);background:none;border-radius:6px;padding:3px 8px;font-size:12px;cursor:pointer;text-align:left;max-width:100%}
+.route{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0 0}
+@media (max-width:860px){
+  .dutybar .wrap{flex-wrap:nowrap;overflow-x:auto}
+  .orgbtn{margin-left:8px}
+  .nowp .item{grid-template-columns:1fr auto}
+  .nowp .item .when{grid-column:1}
+}
+
+/* ── v4 ── */
+.path input{flex:1;min-width:0;border:0;background:none;padding:2px 0;font-size:13.5px}
+.card .path input{font-size:12.5px}
+.daylist li.ev::before{border-color:var(--rule);background:var(--rule);width:10px;height:10px;left:-6px;top:18px}
+.schoolev{margin:6px 0;padding:7px 12px;border-radius:8px;background:var(--paper);border:1px dashed var(--rule);font-size:13.5px;color:var(--ink-2)}
+.schoolev b{color:var(--ink);font-weight:600}
+.month-head label{display:flex;gap:6px;align-items:center;cursor:pointer}
+
+.months button{gap:2px}
+.months .n+.n{opacity:.75}
+
+.api-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-size: 11.5px;
+  font-weight: 600;
+  margin-left: 6px;
+}
+.api-badge.on { background: var(--ok-bg); color: var(--ok); }
+.api-badge.off { background: var(--paper); color: var(--ink-2); border: 1px solid var(--rule); }
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="nav"><div class="wrap">
+    <div class="brand">TeacherMate<small>새솔초등학교 · 2026학년도</small></div>
+    <nav class="menu" aria-label="주 메뉴">
+      <button data-page="home" aria-current="page">내 업무 <span class="cnt" id="cntHome" hidden>0</span></button>
+      <button data-page="upload">자료 올리기</button>
+      <button data-page="handover">인수인계</button>
+      <button data-page="ask">물어보기</button>
+    </nav>
+    <div class="navright">
+      <button class="gear" id="gear">설정·API·지표</button>
+    </div>
+  </div></div>
+  <div class="dutybar">
+    <div class="wrap" id="dutybar" role="tablist" aria-label="내 업무분장"></div>
+    <div class="mega" id="mega" hidden></div>
+  </div>
+</header>
+
+<main class="wrap">
+  <section id="p-home">
+    <p class="demo-note">시연용 가상 학교입니다. ‘학교 업무분장’에서 내 업무를 고르면 그 메뉴만 위에 뜹니다. 과학정보부 업무는 ‘자료 올리기 → 작년 업무표’로 채워 보세요.</p>
+    <div id="nowPanel"></div>
+    <div class="grid2">
+      <div>
+        <div class="months" id="months" role="tablist" aria-label="월 선택"></div>
+        <div id="monthBody"></div>
+      </div>
+      <aside class="panel aside" id="aside"></aside>
+    </div>
+  </section>
+
+  <section id="p-upload" hidden>
+    <h1 class="page">자료 올리기</h1>
+    <p class="lead">학사력, 작년 업무표, 공문·회의자료를 한곳에서 올립니다. 파일을 넣으면 종류를 알아보고 알아서 내 업무로 정리합니다. 학생 명단이 들어 있으면 올라가지 않습니다.</p>
+    <div class="kinds" id="kinds">
+      <button class="kind" data-kind="cal" aria-pressed="true"><b>학사력</b><span>행사를 읽고 내 업무분장의 준비 업무를 제안</span></button>
+      <button class="kind" data-kind="sheet" aria-pressed="false"><b>작년 업무표</b><span>선임자의 월별 체크리스트 → 올해 초안, 해마다 누적</span></button>
+      <button class="kind" data-kind="doc" aria-pressed="false"><b>공문·회의자료</b><span>단계별 업무 흐름과 원문 근거</span></button>
+    </div>
+    <div class="panel">
+      <div class="drop" id="drop">
+        <strong>파일을 여기에 끌어다 놓으세요</strong> (PDF · 한글 · 워드 · 엑셀 · 텍스트 · 이미지)<br>
+        <span class="muted">한글(HWP·HWPX)도 바로 읽습니다. 배포용·암호 문서만 PDF로 저장해 올립니다. 이미지 학사력은 AI가 읽습니다.</span>
+        <div class="row" style="justify-content:center"><label class="btn ghost filebtn">파일 고르기<input type="file" id="upFile" accept=".pdf,.hwp,.hwpx,.docx,.xlsx,.xls,.txt,.md,.png,.jpg,.jpeg,.webp"></label></div>
+      </div>
+      <div id="pasteBox">
+        <p class="sub" style="margin:14px 0 6px" id="pasteHint"></p>
+        <textarea id="paste"></textarea>
+        <div class="row">
+          <button class="btn" id="pasteGo">정리하기</button>
+          <span id="sampleBtns" class="row" style="margin:0"></span>
+        </div>
+      </div>
+      <div id="detected"></div>
+    </div>
+    <div id="upOut"></div>
+  </section>
+
+  <section id="p-handover" hidden>
+    <h1 class="page">인수인계</h1>
+    <p class="lead">업무분장마다 요령과 원본 NAS 폴더 위치를 카드로 남깁니다. 1년 동안 처리한 기록으로 카드 초안을 만들고, 학년 말에 인수인계서로 내려받아 후임자에게 넘깁니다. 지난해 기록은 업무마다 이력으로 쌓입니다.</p>
+    <div id="hoBody"></div>
+  </section>
+
+  <section id="p-ask" hidden>
+    <h1 class="page">물어보기</h1>
+    <p class="lead">우리 학교에 저장된 업무, 학사력 행사, 인수인계 카드, 업무분장표 안에서만 답합니다. 근거가 없으면 ‘확인 필요’로 알려 드립니다.</p>
+    <div class="chat" id="chat"></div>
+    <div class="ask"><input id="q" placeholder="예: 감사 에세이 마감은 언제야?" aria-label="질문"><button class="btn" id="qGo">묻기</button></div>
+    <div class="examples" id="examples"></div>
+  </section>
+</main>
+
+<dialog id="dlg"><div class="dlg" id="dlgBody"></div></dialog>
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+/* ===================== 학교 업무분장표 ===================== */
+const ORG=[
+ {dept:"학급 담임",teams:[{name:"학급 담임",items:[["1학년 담임","hr1"],["2학년 담임","hr2"],["3학년 담임","hr3"],["4학년 담임","hr4"],["5학년 담임","hr5"],["6학년 담임","hr6"]]}]},
+ {dept:"교무기획부",teams:[
+  {name:"교무기획 총괄",items:["학교교육과정 운영 총괄","대외행사","교칙 및 제규정","학교생활기록부","입학·졸업 업무","월중행사","의식집회 기획·진행","수학여행·수련활동","교육기부","청렴교육","교원인사위원회 회의록","학교일지","비상연락망","학교·학급 설명회","방학과제"]},
+  {name:"학습자료·분실물 관리",items:["학습자료·교구·준비물 관리","분실물 관리"]},
+  {name:"학운위·교원단체",items:["교원단체 업무","학교운영위원회 조직·지원"]},
+  {name:"학부모회·교복",items:["학부모회 운영·연수","교복"]},
+  {name:"동창회·경제교육",items:["동창회 운영","나눔바자회","경제교육"]},
+  {name:"학적관리",items:["입퇴학 처리","출석","학적 전산 처리"]}]},
+ {dept:"교육과정부",teams:[
+  {name:"교육과정 편성개발 총괄",items:["학교교육과정 편성","연수 섭외","학교평가","혁신교육","교원능력개발평가","기초학력 진단·보정","AI교육과정 연구","입학설명회","신입생 추첨"]},
+  {name:"특수교육·기타교육",items:["특수교육","통일교육","독도교육","다문화교육","장애·양성평등교육","저출산 대비교육","탈북학생 교육"]},
+  {name:"AI교육·교육정보",items:["AI교육","메이커 교육","AI교실·교구 관리"]}]},
+ {dept:"수업연구부",teams:[
+  {name:"교육방법·수업연구 총괄",items:["수업연구","컨설팅장학","수업공개","교과연구회","보결수업 배당","평가 계획 수립","경시대회","교과전담교사 지도"]},
+  {name:"영재교육·연수",items:["영재교육","연수 배당·안내","교육복지"]},
+  {name:"창체(동아리·우애)",items:["우애활동","동아리활동 조직"]},
+  {name:"독서교육",items:["독서교육","토론·논술교육","도서실 운영"]}]},
+ {dept:"생활안전부",teams:[
+  {name:"생활안전교육 총괄",items:["인성교육","학생인권·교권","생활교육","학교폭력"]},
+  {name:"안전교육",items:["안전교육","안전점검의 날"]},
+  {name:"통학버스",items:["통학질서교육","학교버스 운행"]},
+  {name:"어린이회",items:["어린이회 운영","원호","성금"]},
+  {name:"상담교육·감사교육",items:["상담교육",["감사교육","thanks"],"민주·시민교육","자살예방","성고충 상담"]},
+  {name:"민방공",items:["민방공·안전훈련(지진·소방·폭염)"]},
+  {name:"보건",items:["보건위생교육","건강기록부","성교육","금연교육","정신건강교육","감염병 예방·방역"]},
+  {name:"급식",items:["급식 업무","영양·식생활 교육","급식실 방역"]}]},
+ {dept:"과학정보부",teams:[
+  {name:"과학정보환경교육 총괄",items:["정보통신기술교육","과학·기술교육",["학교정보공시","pub"],["나이스 관리","neis"],"업무관리시스템 운영","NAS 폴더 자료관리"]},
+  {name:"과학실 관리",items:["과학실 운영","과학행사","실험기구 관리","실과교육","발명교육"]},
+  {name:"환경교육·생태전환",items:["환경교육","생태전환교육","학교 주변 환경정화","미세먼지 관리"]}]},
+ {dept:"방과후진로부",teams:[
+  {name:"방과후·진로·예체능 총괄",items:["방과후 교육활동","돌봄교실","마을결합형 교육","예술교육","진로교육"]},
+  {name:"방송",items:["방송실 운영","방송부 교육","방송장비 관리"]},
+  {name:"문예교육",items:["경필·작문대회","문예교육"]},
+  {name:"홍보미디어",items:["행사 사진·영상 정리","브로슈어"]},
+  {name:"미술교육·대회지도",items:["교내외 미술행사","식장 꾸미기","각종 대회 안내"]},
+  {name:"체육교육·캠프야영",items:["운동회","육상대회","체육교구 관리","PAPS","수영교육","청소년단체"]},
+  {name:"음악교육",items:["합창단","강당 관리","가창교육"]},
+  {name:"오케스트라",items:["오케스트라 운영","콩쿠르","악기 관리"]}]},
+ {dept:"국제이해부",teams:[
+  {name:"영어교육 총괄",items:["영어교육 계획","영어교육과정 개발","영어평가"]},
+  {name:"창의융합",items:["창의융합교육","Writing 전시회"]},
+  {name:"중국어교육",items:["중국어 교육과정·강사 관리"]},
+  {name:"영어평가·행사",items:["영어실 운영","영어캠프·행사","영어신문","영어말하기대회"]}]}
+];
+const SUPPORT=[
+ ["교무행정지원","방송·컴퓨터","학교 정보화기기(PC·실물화상기) A/S, 전산, 네트워크, 홈페이지"],
+ ["교무행정 실무사","학적관리 보조·물품구매","SMS, 연수비 신청, 체험학습 신청, 상장·명찰, 물품 품의·검수 지원"],
+ ["교무행정 실무사","감사교육 지원·편집출판","감사교육 행사 지원, 학부모 행사 지원, 학사달력·홍보물 제작, 행사 사진"],
+ ["교무행정 실무사","한자교육·교과서·통계","교과서, 교육통계, 재학증명서·생기부 민원, 분실물"],
+ ["행정실","급여·예산","급여, 예·결산, 발전기금, 교육청 지원금"],
+ ["행정실","지출·계약","계약(공사·물품·용역), 전자입찰·S2B, 비품 관리"],
+ ["행정실","세입·지출","기본운영비·목적사업비 지출, 출납, 학교인감"],
+ ["시설실","시설관리","전기·수도·소방·냉난방기·정수기 유지관리와 A/S"],
+ ["시설실","인쇄·공문","인쇄, 공문 사송, 프린터 A/S"],
+ ["실무사","과학실·도서실","과학실 관리, 도서실 관리"]
+];
+const PALETTE=["var(--c-hr)","var(--c-neis)","var(--c-mag)","var(--c-g6)","var(--c-6)","var(--c-sci)"];
+const hash=s=>{let h=0;for(const c of s)h=(h*31+c.charCodeAt(0))|0;return "d"+(h>>>0).toString(36)};
+function itemInfo(it){return Array.isArray(it)?{name:it[0],id:it[1]}:{name:it,id:null}}
+function orgItemId(dept,team,it){const i=itemInfo(it);return i.id||hash(dept+"|"+team+"|"+i.name)}
+const ORG_INDEX={};ORG.forEach(d=>d.teams.forEach(t=>{ORG_INDEX[hash(d.dept+"|"+t.name+"|*")]={name:t.name,dept:d.dept,team:t.name,items:t.items.map(x=>itemInfo(x).name)};t.items.forEach(it=>{const i=itemInfo(it);ORG_INDEX[orgItemId(d.dept,t.name,it)]={name:i.name,dept:d.dept,team:t.name}})}));
+const SCI_COMMON={id:"sci",name:"과학정보부 공통",dept:"과학정보부",team:"부서 공통",common:true};
+
+/* ===================== 기본 데이터 ===================== */
+const WEEK=["일","월","화","수","목","금","토"];
+const MONTHS=[3,4,5,6,7,8,9,10,11,12,1,2];
+const SY=2026;
+const SCI_SAMPLE={"rows": [{"s": "3월", "g": "총괄", "c": "2024 과학정보부 교육과정 최종 수정", "r": "서울초등교육, 부서 주요업무계획, 생태전환교육 기본 계획", "d": true, "n": ""}, {"s": "3월", "g": "과학", "c": "과학실험실 안전 관련 관리계획 수립", "r": "과학실 안전관리 및 안전매뉴얼, 학교 교육과정에 포함", "d": true, "n": ""}, {"s": "3월", "g": "과학", "c": "과학실 전담교원 지정", "r": "별도 내부결재 또는 학교 교육과정에 포함", "d": true, "n": ""}, {"s": "3월", "g": "과학", "c": "과학실 안전교육 연수", "r": "실시 계획 수립 및 결과 보고", "d": true, "n": ""}, {"s": "3월", "g": "과학", "c": "1학기 학습준비물 사용 계획 안내", "r": "입찰 진행 권장, 협의록에 정확한 품목 및 브랜드 기재", "d": true, "n": ""}, {"s": "3월", "g": "과학", "c": "학습준비물센터 봉사자 위촉 관련 서류 기안", "r": "주민등록등본, 건강진단서, 통장 사본 등", "d": true, "n": ""}, {"s": "3월", "g": "과학", "c": "상반기 생물학습자료(배추흰나비 알) 신청", "r": "공문 과학실무사 지정, 3. 15.(금)까지", "d": true, "n": ""}, {"s": "3월", "g": "과학", "c": "과학실험실 폐수·폐시약 및 액침표본 보관 현황 제출", "r": "공문 과학실무사 지정, 3. 22.(금)까지", "d": true, "n": ""}, {"s": "3월", "g": "과학", "c": "서울과학전람회 예선대회 안내 가정통신문(1차)", "r": "2월 공문 확인, 3. 6.(수) 배부 예정", "d": true, "n": ""}, {"s": "3월", "g": "과학", "c": "교내 학생과학발명품경진대회 계획 수립", "r": "교육지원청 공문 내려오면", "d": true, "n": ""}, {"s": "3월", "g": "과학", "c": "교내 학생과학발명품경진대회 가정통신문", "r": "시상 안내", "d": true, "n": ""}, {"s": "3월", "g": "과학", "c": "교내 학생과학발명품경진대회 심사위원 협의", "r": "1차 심사 - 학년 내 / 2차 심사 - 심사위원 학년별 1명", "d": true, "n": ""}, {"s": "3월", "g": "과학", "c": "교내 학생과학발명품경진대회 결과 보고", "r": "교내 시상, 교육지원청 보고", "d": true, "n": ""}, {"s": "3월", "g": "과학", "c": "발명교육 운영 실태 제출", "r": "4. 30.(화)까지 / 적당히, 대강", "d": true, "n": ""}, {"s": "3월", "g": "정보", "c": "개인정보 수집·이용·제공 고지 및 동의 안내 가정통신문", "r": "관련 부서에서 처리할 수 있도록 안내", "d": true, "n": ""}, {"s": "3월", "g": "정보", "c": "학교 홈페이지 운영 계획 수립", "r": "학교 교육과정에 포함", "d": true, "n": ""}, {"s": "3월", "g": "정보", "c": "2023학년도 개인정보 파기 확인 기안", "r": "3. 5.(화)까지", "d": true, "n": ""}, {"s": "3월", "g": "정보", "c": "청소년 미디어 이용습관 진단조사 담당자 현황 제출", "r": "진단, 치유 구분(보통 치유는 생활부, 상담 담당자 등)", "d": true, "n": ""}, {"s": "3월", "g": "정보", "c": "청소년 미디어 이용습관 진단조사 학급 수 / 인원 등록", "r": "정확하게(틀리면 학급에서 조사 참여 때 어려움 有)", "d": true, "n": ""}, {"s": "3월", "g": "정보", "c": "개인정보보호 종합지원시스템 담당자 현행화", "r": "▶ 개인정보보호책임자: 학교장 / 개인정보보호총괄관리자: 부장\n→ 등록 후 상위기관 승인\n▶ 개인정보취급자: 행정실장 등\n→ 등록 후 정보부장 승인", "d": true, "n": ""}, {"s": "3월", "g": "정보", "c": "개인정보 내부 관리계획 개정", "r": "개정 사항 및 수탁사 내용 반영, 내부결재 후 전 교직원 공람\n * 졸업앨범 업체까지 최종 선정 후 개정 권장", "d": true, "n": "보통 4월 이후"}, {"s": "3월", "g": "정보", "c": "개인정보처리방침 개정 및 게시", "r": "내부관리계획 개정 이후, 이전 방침 리스트 업", "d": true, "n": "보통 4월 이후"}, {"s": "3월", "g": "정보", "c": "정보보안담당관 지정", "r": "내부결재", "d": true, "n": ""}, {"s": "3월", "g": "정보", "c": "학부모 총회 - 정보통신윤리교육 가정통신문", "r": "학교 상황에 맞춰서", "d": true, "n": ""}, {"s": "3월", "g": "정보", "c": "지능정보서비스(인터넷, 스마트폰) 과의존 예방교육 실시 계획 및\n교육 실적 제출", "r": "- 자료집계시스템 제출: 3. 29.(금)까지\n  * 실시 계획 일시는 추후 변동되어도 상관없음\n- 정보 공시 입력: 4. 29.(월)까지\n  * 반드시 학기별 1회 이상 입력", "d": true, "n": ""}, {"s": "3월", "g": "정보", "c": "업무용 소프트웨어 갱신", "r": "학교별 갱신 시점 확인", "d": true, "n": ""}, {"s": "3월", "g": "정보", "c": "구글 학생 계정 생성", "r": "", "d": true, "n": ""}, {"s": "3월", "g": "정보", "c": "통합계약(공동구매) 수요 제출", "r": "청마다 상이함\n- 별도의 위원회 개최할 필요 X\n- 수요조사 → 선호도 조사 → 수요 변경신청 순으로 진행\n  * 수요 변경신청 시 최초 제출한 것과 큰 차이 있을 경우 업무 차질\n- 보통 7월 중 납품, 급할 경우 공동구매는 피하는 것이 좋음\n- 관련 문의는 소속 교육지원청 재정지원과", "d": true, "n": ""}, {"s": "3월", "g": "정보", "c": "2023년 정보화기기 보급 예산 집행결과 제출", "r": "3. 7.(목)까지", "d": true, "n": ""}, {"s": "3월", "g": "생태전환", "c": "단위 학교 생태전환교육 의무 실시 관련", "r": "학년별 생태전환교육 시수 연간 7시간 이상 편성", "d": true, "n": ""}, {"s": "3월", "g": "생태전환", "c": "생태전환교육 업무 담당자 지정", "r": "학교 교육과정에 포함 또는 업무분장으로 갈음 가능할듯", "d": true, "n": ""}, {"s": "3월", "g": "생태전환", "c": "기후위기 대응 학교 문화 조성·실천", "r": "1회용품 OUT, 종이 사용 DOWN, 자원순환실천 GO", "d": true, "n": ""}, {"s": "3월", "g": "영재", "c": "3~4월 모집 영재교육원 안내 가정통신문", "r": "3월 첫 주에 안내(민원 발생 소지 有)", "d": true, "n": ""}, {"s": "4월", "g": "과학", "c": "교내 학생과학발명품경진대회 결과 보고", "r": "교내 시상, 교육지원청 보고", "d": true, "n": ""}, {"s": "4월", "g": "과학", "c": "과학의 달 행사 계획 수립 및 운영", "r": "학교교육계획으로 갈음 가능\n- 키트 구입할 경우 최대한 서두를 것(보통 3월 말 전에 구입)", "d": true, "n": ""}, {"s": "4월", "g": "과학", "c": "상반기 과학교육 기초자료 제출", "r": "청마다 공문 내려오는 시기 상이할 수 있음\n  * 입력 내용 미흡할 경우 학교로 컨설팅 나올 수 있음", "d": true, "n": ""}, {"s": "4월", "g": "과학", "c": "발명교육 운영 실태 제출", "r": "4. 30.(화)까지 / 적당히, 대강", "d": true, "n": ""}, {"s": "4월", "g": "과학", "c": "각종 외부 프로그램 안내 및 대상자 추천", "r": "- 추첨이 가장 깔끔(유니피커 활용)\n- 동시에 여러 프로그램 추천 시 중복지원 불가 문구 첨가 등", "d": true, "n": ""}, {"s": "4월", "g": "정보", "c": "청소년 미디어 이용습관 진단조사 가정통신문", "r": "- 초4(학교에서 실시): 4. 8.(월) 배부 권장\n- 초4(가정에서 실시): 4. 15.(월) 배부 권장\n- 초1보호자: 4. 15.(월) 배부 권장", "d": true, "n": ""}, {"s": "4월", "g": "정보", "c": "청소년 미디어 이용습관 진단조사 결과 조치", "r": "- 주의·위험사용자군 학생 보호자 대상 동의서 득하여 시스템 입력\n  * 보호자 동의서 필수 아니므로 적당히 독려할 것\n- 보호자 동의서 득한 위험사용자군 학생 → 추가심리검사 필수", "d": true, "n": ""}, {"s": "4월", "g": "정보", "c": "상반기 홈페이지(도메인) 운영 현황 제출", "r": "공문 전산실무사 지정", "d": true, "n": ""}, {"s": "4월", "g": "정보", "c": "MS Office 365 무료 설치 안내", "r": "가정통신문 반드시 내보낼 것", "d": true, "n": ""}, {"s": "4월", "g": "정보", "c": "통합계약(공동구매) 수요 제출", "r": "청마다 상이함\n- 별도의 위원회 개최할 필요 X\n- 수요조사 → 선호도 조사 → 수요 변경신청 순으로 진행\n  * 수요 변경신청 시 최초 제출한 것과 큰 차이 있을 경우 업무 차질\n- 보통 7월 중 납품, 급할 경우 공동구매는 피하는 것이 좋음\n- 관련 문의는 소속 교육지원청 재정지원과", "d": true, "n": ""}, {"s": "4월", "g": "정보", "c": "불용 PC 수거 추가 신청", "r": "공문 전산실무사 지정", "d": true, "n": ""}, {"s": "4월", "g": "정보", "c": "개인정보 내부 관리계획 개정", "r": "개정 사항 및 수탁사 내용 반영, 내부결재 후 전 교직원 공람\n * 졸업앨범 업체까지 최종 선정 후 개정 권장(보통 4월 이후)", "d": true, "n": ""}, {"s": "4월", "g": "정보", "c": "개인정보처리방침 개정 및 게시", "r": "내부관리계획 개정 이후, 이전 방침 리스트 업", "d": true, "n": ""}, {"s": "4월", "g": "정보", "c": "업무용 소프트웨어 갱신", "r": "학교별 갱신 시점 확인", "d": true, "n": ""}, {"s": "4월", "g": "생태전환", "c": "2024 기후변화주간 계획 수립", "r": "학교 상황에 따라 생략할 수 있음", "d": true, "n": ""}, {"s": "4월", "g": "생태전환", "c": "2024 기후변화주간 운영 가정통신문", "r": "교내 주간 운영할 경우 학교 자체 발송", "d": true, "n": ""}, {"s": "5월", "g": "과학", "c": "상반기 과학교육 기초자료 제출", "r": "청마다 공문 내려오는 시기 상이할 수 있음\n  * 입력 내용 미흡할 경우 학교로 컨설팅 나올 수 있음", "d": true, "n": ""}, {"s": "5월", "g": "정보", "c": "청소년 미디어 이용습관 진단조사 결과 조치", "r": "- 주의·위험사용자군 학생 보호자 대상 동의서 득하여 시스템 입력\n  * 보호자 동의서 필수 아니므로 적당히 독려할 것\n- 보호자 동의서 득한 위험사용자군 학생 → 추가심리검사 필수", "d": true, "n": ""}, {"s": "5월", "g": "정보", "c": "상반기 홈페이지(도메인) 운영 현황 제출", "r": "공문 전산실무사 지정", "d": true, "n": ""}, {"s": "5월", "g": "정보", "c": "MS Office 365 무료 설치 안내", "r": "가정통신문 반드시 내보낼 것", "d": true, "n": ""}, {"s": "5월", "g": "정보", "c": "학교 무선망 4차 구축 수요 제출", "r": "추가 구축 또는 노후기기 교체\n1. 23년도 2월 '학교 전교실 무선망 추가 구축을 위한 수요 조사'\n메모보고한 것 확인\n2. 23년도 6월 '학교 무선망 구축 사업을 위한 이용 현황 조사 공문'\n메모보고한 것 확인\n → 이를 바탕으로 올해 추가 구축하기를 희망하거나\n     18년 이전 구축한 기기에 대한 교체 수요 제출", "d": true, "n": ""}, {"s": "5월", "g": "정보", "c": "개인정보파일 일제 정비", "r": "공문 받으면 진행하기\n- 개인정보파일 표준목록 관련 변경사항 확인(12개)\n  → 도서관 이용 관리, 교직원 급여 정보, 교직원 인사기록부 추가\n- 보유 파일 건수 확인(당해 기준)\n- 시스템 접속 후 각 표준목록 수정\n  · 담당자, 개인정보 항목, 보유기간, 건수 등\n  · 영향평가: 해당없음, 계획없음\n- 변경 승인 완료 후 전체 엑셀파일 다운로드, 내부결재\n  · 표준목록 외 개인정보파일은 별도 대장 작성", "d": true, "n": "추후\n공문 내려오면\n상세 안내 예정"}, {"s": "5월", "g": "정보", "c": "통합계약(공동구매) 수요 제출", "r": "청마다 상이함\n- 별도의 위원회 개최할 필요 X\n- 수요조사 → 선호도 조사 → 수요 변경신청 순으로 진행\n  * 수요 변경신청 시 최초 제출한 것과 큰 차이 있을 경우 업무 차질\n- 보통 7월 중 납품, 급할 경우 공동구매는 피하는 것이 좋음\n- 관련 문의는 소속 교육지원청 재정지원과", "d": true, "n": ""}, {"s": "5월", "g": "정보", "c": "통합계약(공동구매) 선호도 제출", "r": "공문에 안내되는 업체리스트 중 1개 업체 선택 및 제출", "d": true, "n": ""}, {"s": "5월", "g": "정보", "c": "통합계약(공동구매) 최종 수량 확정", "r": "계약체결 알림 및 추가(변경) 수요조사\n- 확정 금액에 따라 추가 구매 가능\n- 최초 수요조사 때보다 수량이 많이 줄 경우 담당자에 사전 문의", "d": true, "n": ""}, {"s": "5월", "g": "정보", "c": "불용 PC 수거 추가 신청", "r": "공문 전산실무사 지정", "d": true, "n": ""}, {"s": "5월", "g": "정보", "c": "개인정보 내부 관리계획 개정", "r": "개정 사항 및 수탁사 내용 반영, 내부결재 후 전 교직원 공람\n * 졸업앨범 업체까지 최종 선정 후 개정 권장(보통 4월 이후)", "d": true, "n": ""}, {"s": "5월", "g": "정보", "c": "개인정보처리방침 개정 및 게시", "r": "내부관리계획 개정 이후, 이전 방침 리스트 업", "d": true, "n": ""}, {"s": "6월", "g": "과학", "c": "서울과학전람회 예선대회 안내 가정통신문(2차)", "r": "공문 내려오면 가정통신문 추가 배부 권장", "d": true, "n": ""}, {"s": "6월", "g": "과학", "c": "1학기 학습준비물 예산 잔액 집행", "r": "2학기로 이월, 공통 학습준비물 구입 등 학교 상황에 적절하게 대응", "d": true, "n": ""}, {"s": "6월", "g": "정보", "c": "2025 디벗 OS 선정위원회 개최", "r": "- 선정위원회 개최 기안은 일일교육계획, 부장회의록 등으로 갈음 가능\n- 선정위원회 구성은 학교 자율\n- 심사표 등 근거 내부결재 필요", "d": true, "n": "지원청\n안내에 따름"}, {"s": "6월", "g": "정보", "c": "2025 디벗 OS 선정 결과 제출", "r": "자료집계제출, 6. 14.(금)까지", "d": true, "n": ""}, {"s": "6월", "g": "정보", "c": "통합계약(공동구매) 계약 체결", "r": "공문 전산실무사 지정", "d": true, "n": ""}, {"s": "6월", "g": "생태전환", "c": "생태전환교육의 달 운영", "r": "학교 재량", "d": true, "n": ""}, {"s": "7월", "g": "과학", "c": "1학기 학습준비물 예산 잔액 집행", "r": "2학기로 이월, 공통 학습준비물 구입 등 학교 상황에 적절하게 대응", "d": true, "n": ""}, {"s": "7월", "g": "과학", "c": "방학 중 프로그램 안내 및 대상자 추천", "r": "- 공문 내용에 따라 안내\n- 가정통신문 발송 여부는 학교 재량", "d": true, "n": ""}, {"s": "7월", "g": "과학", "c": "과학실험실 폐기물 일정 확인 및 처리", "r": "- 과학실무사 공문 지정\n- 수거 완료 즉시 메모보고 제출", "d": true, "n": ""}, {"s": "7월", "g": "과학", "c": "교실 내 자료, 실험기구 등 반납 안내", "r": "- 학습준비물실 자료 반납(색연필, 사인펜 등)\n- 교실 실험을 위한 실험기구 반납", "d": true, "n": ""}, {"s": "7월", "g": "정보", "c": "각급학교 컴퓨터교육실 교육용 PC 보유 현황 제출", "r": "자료집계제출, 7. 10.(수) 17:00까지", "d": true, "n": ""}, {"s": "7월", "g": "정보", "c": "방학 중 각종 기자재 관리 안내", "r": "- PC 및 PC 주변 먼지 제거\n- 방학 중 PC 관리를 위한 암호 수합\n- 학교 스마트기기 수합 상태 확인\n- 전출, 파견 등 현황 파악하여 교원 대여용 기기 반납 안내", "d": false, "n": ""}, {"s": "7월", "g": "정보", "c": "통합계약(공동구매) 대금 납부", "r": "- 학교 상황에 따라 업무 처리 방식 다름\n- 보통은 정보부에서 기안 / 일부는 행정실에서 알아서 해주기도\n- 기한 놓칠 경우 추후 공문 재안내\n- 공문 내려오면 엑셀 파일 금액에 대해 지출품의 내부결재", "d": false, "n": ""}, {"s": "8, 9월", "g": "과학", "c": "서울융합과학·수학·메이커 축제 안내", "r": "학교 홈페이지 내 간단히 게시", "d": true, "n": ""}, {"s": "8, 9월", "g": "과학", "c": "하반기 생물학습자료(수생식물) 신청", "r": "관련 공문 과학실무사 지정, 신청 놓치지 않도록 유의, 8. 21.(수)까지 메모보고", "d": true, "n": ""}, {"s": "8, 9월", "g": "과학", "c": "폐수, 폐시약 및 액침표본 수거", "r": "3월 제출 내용 관련, 수거 일정 공문 과학실무사 지정", "d": true, "n": ""}, {"s": "8, 9월", "g": "과학", "c": "2학기 학습준비물 사용 계획 안내", "r": "학년별 구입 시기 지정 또는 입찰 진행(부장회의 때 안내)", "d": true, "n": ""}, {"s": "8, 9월", "g": "정보", "c": "공동구매 관련 대금 지급", "r": "- 학교 상황에 따라 업무 처리 방식 다름\n- 보통은 정보부에서 기안\n- 기한 놓칠 경우 추후 공문 재안내", "d": true, "n": ""}, {"s": "8, 9월", "g": "정보", "c": "전자칠판 보급 사업 추진 관련", "r": "- 디혁과-14058(2024. 8. 7.) 공문 내 전자칠판 보급 지원 계획 문서\n- 서울특별시교육청 계약업무 처리지침\n- 견적서 받을 때 철거 등 용역비 포함 여부 확인", "d": true, "n": ""}, {"s": "8, 9월", "g": "정보", "c": "개인정보 처리방침 개정", "r": "현행화에 따른 개인정보 처리방침 개정\n- 내부결재 후 수정, 이전 방침 리스트업", "d": true, "n": "이전 개정 이후\n변동사항 발생 시"}, {"s": "8, 9월", "g": "영재", "c": "대학부설 영재교육원 모집요강 안내 가정통신문", "r": "공문 오는 대로 안내(보통 9월 첫 주, 민원 발생 소지 有)", "d": true, "n": "교육청 일괄 게시\n: 9. 2.(월)"}, {"s": "8, 9월", "g": "영재", "c": "교육청 영재교육원 모집요강 안내 가정통신문", "r": "- 공문 접수 후 7일 내에 안내 권장(민원 발생 소지 有)\n- 초등(3~5학년), 중등(6학년) 구분해서 배부 권장\n- 모집요강 학교 홈페이지 탑재", "d": true, "n": ""}, {"s": "8, 9월", "g": "영재", "c": "학교추천위원회 구성", "r": "★ 보통 10월 중 진행!\n- 교감, 3~6학년 부장교사, 과학전담교사 등(업무 담당자: 간사)\n- 보안서약서 첨부하여 내부결재", "d": false, "n": ""}, {"s": "10월", "g": "정보", "c": "전자칠판 보급 사업 추진 관련", "r": "- 디혁과-14058(2024. 8. 7.) 공문 내 전자칠판 보급 지원 계획 문서\n- 서울특별시교육청 계약업무 처리지침\n- 견적서 받을 때 철거 등 용역비 포함 여부 확인", "d": true, "n": ""}, {"s": "10월", "g": "정보", "c": "학교 정보보호 자체점검 실시", "r": "- 정보보안 및 개인정보 보호 자율 점검(내부관리계획 내 양식 활용)\n- 학교 SNS 채널 자체 보안점검: 해당교, 자율사항\n  · 22. 12. 20. 교육연구정보원 시행 공문 참고", "d": true, "n": ""}, {"s": "10월", "g": "정보", "c": "위탁업체 자체교육 및 보안점검 요청", "r": "- 담당자 직접교육 또는 업체 자체교육(이수증)\n- 보안점검 증빙자료: 자체 별도 양식\n* 제출 요청 내부결재 후 업체에 유선 연락, 12월 말까지 완료", "d": true, "n": ""}, {"s": "10월", "g": "영재", "c": "교육청 영재교육원 모집요강 안내 가정통신문", "r": "- 공문 접수 후 7일 내에 안내 권장(민원 발생 소지 有)\n- 초등(3~5학년), 중등(6학년) 구분해서 배부 권장\n- 모집요강(+사회통합전형) 학교 홈페이지 탑재", "d": true, "n": ""}, {"s": "10월", "g": "영재", "c": "학교추천위원회 구성", "r": "- 10. 17.(목)까지 구성 완료\n- 교감, 3~6학년 부장교사, 과학전담교사 등(업무 담당자: 간사)\n- 보안서약서 첨부하여 내부결재\n- 학추위 개최 일자 미리 정해서 복무 맞추기(11.13.~11.15. 중 하루)", "d": true, "n": "24. 9. 23.\n본청 디혁과\n시행 공문 참고"}, {"s": "10월", "g": "영재", "c": "GED 담당자 연수 신청", "r": "- 공문 내려오면 반드시 신청\n- 11. 5.(화)까지 교내 교원 대상으로 전달 연수 실시", "d": true, "n": ""}, {"s": "11월", "g": "과학", "c": "2학기 학습준비물 예산 잔액 집행", "r": "공통 준비물 위주 구입", "d": true, "n": ""}, {"s": "11월", "g": "과학", "c": "우수과학어린이 추천 협조", "r": "학교마다 담당자 다름\n- 참고: (배포용)2022 서울OO초등학교 우수과학어린이 추천", "d": true, "n": ""}, {"s": "11월", "g": "정보", "c": "컴퓨터교육실 교육용PC 보유 현황 제출", "r": "공문 오는 시기는 매해 상이하므로 공문 오면 내용 확인하여 제출", "d": false, "n": ""}, {"s": "11월", "g": "정보", "c": "학교 정보보호 자체점검 실시", "r": "- 정보보안 및 개인정보 보호 자율 점검(내부관리계획 내 양식 활용)\n- 학교 SNS 채널 자체 보안점검: 해당교, 자율사항\n  · 22. 12. 20. 교육연구정보원 시행 공문 참고", "d": true, "n": ""}, {"s": "11월", "g": "정보", "c": "위탁업체 자체교육 및 보안점검 요청", "r": "- 담당자 직접교육 또는 업체 자체교육(이수증)\n- 보안점검 증빙자료: 자체 별도 양식\n* 제출 요청 내부결재 후 업체에 유선 연락, 12월 말까지 완료", "d": true, "n": ""}, {"s": "11월", "g": "영재", "c": "GED 지원 안내 가정통신문", "r": "GED 지원 절차 리마인드", "d": true, "n": ""}, {"s": "11월", "g": "영재", "c": "GED 추천 교원 연수", "r": "- 연수 실시 계획(안) 내부결재\n- 유인물 대체 가능", "d": true, "n": ""}, {"s": "11월", "g": "영재", "c": "학교추천위원회 개최", "r": "- 복무사항 확인하여 개최 내부결재", "d": true, "n": ""}, {"s": "11월", "g": "영재", "c": "학교추천위원회 개최 및 대상자 추천", "r": "- 11. 13.(수) ~ 15.(금) 중 개최\n- 대상자 추천 명단 내부결재", "d": true, "n": ""}, {"s": "11월", "g": "영재", "c": "사회통합전형 대상자 직인 발급 및 서류 별도 직송", "r": "- 담임교사 및 업무 담당자 간 서류 더블 체크\n- 직인 발급 시 내부결재\n- 사회통합전형 대상자 서류 별도 직송 필요, 주무관님께 제출 부탁 가능", "d": true, "n": ""}, {"s": "12~2월", "g": "과학", "c": "학습준비물 지원센터 자원봉사자 위촉", "r": "주 15시간 미만, 일급으로 지급", "d": true, "n": ""}, {"s": "12~2월", "g": "정보", "c": "방학 중 각종 기자재 관리 안내", "r": "교실에서 보관할 기자재 / 수거하여 별도 관리가 필요한 기자재 구분\n임의로 폐기 또는 교체하지 않도록 안내", "d": true, "n": ""}, {"s": "12~2월", "g": "정보", "c": "학교 정보보호 자체점검 실시", "r": "- 정보보안 및 개인정보 보호 자율 점검(내부관리계획 내 양식 활용)\n- 학교 SNS 채널 자체 보안점검: 해당교, 자율사항\n  · 22. 12. 20. 교육연구정보원 시행 공문 참고", "d": true, "n": ""}, {"s": "12~2월", "g": "정보", "c": "위탁업체 자체교육 및 보안점검 요청", "r": "- 담당자 직접교육 또는 업체 자체교육(이수증)\n- 보안점검 증빙자료: 자체 별도 양식\n* 제출 요청 내부결재 후 업체에 유선 연락, 12월 말까지 완료", "d": true, "n": ""}, {"s": "12~2월", "g": "정보", "c": "디벗 학교 관리계정 생성 및 제출", "r": "- 각 OS에 따라 다름\n- 관련 내용은 교육연구정보원 담당자에게 문의", "d": true, "n": ""}, {"s": "12~2월", "g": "정보", "c": "2025 디벗 사용과 환경 구축을 위한 개인정보 동의서", "r": "- 서면 또는 온라인 수합, 학교 보관\n- 미동의할 경우 개인화된 디벗 기기 사용 불가 원칙", "d": true, "n": ""}, {"s": "12~2월", "g": "정보", "c": "개인정보파일 파기", "r": "개인정보파일 파기 계획 수립\n - 업무 추진 일정, 파기 목록 포함하여 내부결재\n개인정보파일 파기 요청\n - 특수부의 경우 개인정보 다뤘던 업무 리스트 업\n - 위탁업체에 별도 파기 요청 후 증빙자료 수합\n개인정보파일 파기 확인\n - 학년도 종료 후 5일 이내 내부결재\n - 개인정보파일 파기 관리대장 비전자문서등록", "d": false, "n": ""}, {"s": "12~2월", "g": "정보", "c": "학년말 과학정보부 점검 목록 확인", "r": "- 전산실무사와 일정 사전 조율 필요\n- (삼각산초)2024학년도 마무리 과학정보부 점검 목록_공유", "d": true, "n": ""}, {"s": "12~2월", "g": "정보", "c": "각종 기자재 인수인계 방침 수립 및 안내", "r": "학교 상황에 맞춰 진행\n업무용 노트북 등 대여 진행하는 부분 세심히 확인", "d": true, "n": ""}, {"s": "12~2월", "g": "정보", "c": "교원용 PC 포맷 계획 수립 및 실시", "r": "학교 상황에 따라 진행 방법 상이함\n - 포맷을 안 하는 방법: 웜 / 바이러스 등에 취약, 개인정보 유출 위험 높음\n - 실무사가 전적으로 담당: 학교 규모가 클 경우 업무 부담 큼\n - 업체에 맡김: 비용 발생, 신학년도 준비 기간 등 사전조율 필요", "d": true, "n": ""}, {"s": "12~2월", "g": "정보", "c": "처분예정 불용 PC 현황 제출", "r": "해당 시기 놓칠 경우 4월 중 추가 신청 받긴 하지만 처리 시점 늦어지므로 놓치지 않도록", "d": true, "n": ""}, {"s": "12~2월", "g": "정보", "c": "개인정보 수집·활용 및 제3자 제공 동의서", "r": "반드시 동의받아야 하는 항목 확인\n보유기간 확인(불필요하게 길지 않도록)", "d": false, "n": ""}, {"s": "12~2월", "g": "영재", "c": "발명교육 수료내용 입력 안내", "r": "공문으로 안내되므로 놓치지 않도록", "d": true, "n": ""}, {"s": "12~2월", "g": "영재", "c": "영재교육원 수료자 생활기록부 입력 안내", "r": "12월 중 공문 및 담당자 메일 통해 안내(메일 통하는 경우는 보통 사전 연락 수신하게 됨)\nGED > 성과 > 영재성발달기록부 > 이수내역확인, 학교추천위원회 계정으로 로그인 시 확인 가능", "d": true, "n": ""}, {"s": "12~2월", "g": "예산", "c": "차학년도 예산편성 요구서 작성", "r": "학교회계 예산편성 기본지침 반드시 확인\n - 통합교부예산 반영\n  ㆍ과학실 안전장비 및 실험기자재 구입 지원: 200\n  ㆍ정보교육 실습비 지원: 80\n  ㆍ학습준비물 구입·지원: 인당 3 / 신입생 별도 3(학교에 따라 담당부서 다름)\n  ㆍ학교정보화기기보급: 기준 금액 참고해서 학교 상황에 맞게 편성\n - 공통경상운영비로 전환\n※ 예산편성 요구서 시즌에 놓치면 25년도 업무 진행에 차질을 빚으므로 반드시 꼼꼼히 체크", "d": true, "n": ""}, {"s": "12~2월", "g": "교육과정", "c": "차학년도 교육과정 작성", "r": "서울교육 주요업무, 서울초등교육, 해당 파트 주요업무계획\n참고하여 교육과정 작성\n필수 시수 및 반영할 내용 확인", "d": false, "n": ""}], "train": [{"name": "정보보호(정보보안 및 개인정보보호) 교육", "target": "교직원", "ref": "1. 관련\n  가. 서울특별시교육청 정보보안 기본지침 제9조(정보보안교육)\n  나. 교육부 개인정보 보호지침 제32조(개인정보보호 교육)\n2. 연 1회 이상, 방과후학교 강사 별도 진행\n3. 실시 계획 수립, 이수자 명부 또는 이수증 첨부하여 결과 보고", "note": ""}, {"name": "정보보호(정보보안 및 개인정보보호) 교육", "target": "학교장", "ref": "1. 연 1회 이상 개인정보보호 책임자(CPO) 연수 이수\n2. https://www.seti.go.kr/ > '(교원공통)각급기관 개인정보 보호책임자 교육' 검색 참고\n3. 추후 이수증 첨부하여 결과 보고", "note": ""}, {"name": "정보보호(정보보안 및 개인정보보호) 교육", "target": "과학정보부장", "ref": "1. 연 15시간 이상(합산 가능) 연수 이수\n2. https://sec.keris.or.kr/ > '담당자' 검색 > 각 7시간짜리 연수 2개 이수\n3. 부족분은 교육청 단위 연수 활용\n4. 추후 이수증 첨부하여 결과 보고", "note": ""}, {"name": "정보보호(정보보안 및 개인정보보호) 교육", "target": "수탁사", "ref": "1. 수탁자 대상 교육 실시, 직접교육 또는 자체교육 증빙 확인\n2. 자체교육 증빙자료 요청 시\n  - https://edu.privacy.go.kr/ > 교육 > 온라인교육(개인수강) > 사업자 교육과정 > 공공 및 일반사업자\n3. 증빙자료 제출 요청 및 결과 보고 내부결재", "note": ""}, {"name": "과학실 안전교육", "target": "교원 + 방과후학교 강사", "ref": "1. 관련: 2024년 과학실 안전관리 및 안전매뉴얼 4쪽\n2. 과학실 활용 방과후학교 운영 강사 포함\n3. 실시 계획 수립, 이수자 명부 또는 이수증 첨부하여 결과 보고", "note": ""}, {"name": "과학실 안전교육", "target": "과학실 전담교원", "ref": "1. 연 15시간 이상 연수 이수\n2. 과학교육 기초자료 조사 때 이수 여부 보고(O, X로만)\n3. https://lms.kofac.re.kr/front/main/index.do > '초등학교 과학실험 안전교육' 검색 또는\nhttps://cyberssei.sen.go.kr/ > '초등학교 과학실험 안전교육' 검색 참고", "note": ""}, {"name": "과학실 안전교육", "target": "과학실험 교육실무사", "ref": "1. 연 2회 이상, 총 15시간 이상 연수 이수\n2. 보통 교육청 단위 연수 진행\n3. https://www.seti.go.kr/ > '교육행정-(원격)초등학교 과학실험 안전교육 (안전A)' 검색 또는\nhttps://cyberssei.sen.go.kr/ > '초등학교 과학실험 안전교육' 검색 참고", "note": ""}, {"name": "지능정보서비스(인터넷·스마트폰) 과의존 예방교육", "target": "학생", "ref": "1. 관련\n  가. 지능정보화 기본법 제54조, 지능정보화 기본법 시행령 제50조\n  나. 2024 행복한 학습자를 위한 서울초등교육 138쪽\n2. 반기별 1회 이상, 정보공시 항목, 2월 중 실시 현황 제출\n3. 부실하다고 인정될 경우 관리자 특별교육", "note": "1학기"}]}
+;
+const SCI_LABEL="삼각산초 2024 과학정보부 업무 체크리스트";
+const DEFAULT_MY=["hr5","neis","pub","thanks"];
+
+const BASE=[
+ ["2026-03-03","hr5","NEIS 학급 담임 지정·기초 정보 확인",["학급 담임 지정 여부 확인","학생 기초 정보 변동 확인","출결 마감 방식 확인"],"3월 첫째 주 안에 끝내야 출결 입력이 막히지 않아요. 전입생은 학적 담당과 먼저 확인하세요.","2026학년도 3월 직원회의 자료","NAS2026 > 교무기획부 > 학기초 업무","ok"],
+ ["2026-03-20","hr5","학부모 상담 주간 안내 가정통신문",["상담 신청서 양식 확인","상담 일정표 작성"],"신청서는 작년 양식 재사용 가능. 회신 기한을 상담 주간 1주 전으로.","학사력 2026","NAS2026 > 5학년 > 가정통신문","ok"],
+ ["2026-10-23","hr5","2학기 학부모 상담 결과 정리",["상담 기록 보관","후속 조치 필요 학생 학년부장 공유"],"상담 기록은 학교 내부 시스템에만 남깁니다.","학사력 2026","","ok"],
+ ["2026-11-13","hr5","5학년 협의: 2학기 평가 결과 확인",["교과별 평가 결과 공유","학년 공통 평어 기준 맞추기"],"","5학년 협의록","NAS2026 > 5학년 > 협의록","ai"],
+ ["2026-03-06","neis","나이스 학년도 초기 설정 확인",["학급·교과 편성 확인","교원 권한 부여 점검","업무분장 반영"],"학년도 시작 첫 주에 권한이 안 풀리면 담임들이 출결을 못 넣습니다. 교무기획부와 같이 확인하세요.","2026 업무분장","NAS2026 > 과학정보부 > 나이스","ok"],
+ ["2026-03-27","neis","교과 평가계획 나이스 입력 안내(전 교사)",["입력 일정 메신저 안내","미입력 학급 확인"],"","교육과정 운영 계획 p.12","","ai"],
+ ["2026-07-10","neis","1학기 학교생활기록부 점검 안내·마감",["점검 일정 안내","입력 누락 조회","학년부장 교차 점검 요청"],"","학업성적관리규정","","ai"],
+ ["2026-10-28","neis","2학기 성적 처리 일정 안내(전 교사)",["성적 처리 일정표 작성","메신저 전체 안내","학년부장 공유"],"마감 1주 전 전체 안내, 3일 전 미입력 학급에만 다시 안내하면 민원이 적어요.","나이스 업무 인수인계 메모","NAS2026 > 과학정보부 > 나이스","ok"],
+ ["2026-12-18","neis","학년말 학교생활기록부 마감 점검",["교과 세특 입력 확인","행동특성 입력 확인","학년부장 교차 점검"],"","학업성적관리규정","","ai"],
+ ["2026-04-29","pub","정보공시 입력: 과의존 예방교육 실적",["학기별 실적 정리","정보공시 시스템 입력"],"반드시 학기별 1회 이상 입력(작년 과학정보부 업무표).","삼각산초 2024 과학정보부 업무 체크리스트 › 3월 시트","NAS2026 > 과학정보부 > 정보공시","ok"],
+ ["2026-05-29","pub","학교정보공시 1차 항목 담당자 자료 요청",["공시 항목별 담당 부서 정리","자료 요청 메신저 발송","수합 현황 확인"],"","학교정보공시 업무 안내(샘플)","NAS2026 > 과학정보부 > 정보공시","ai"],
+ ["2026-11-03","pub","학교정보공시 2차 항목 자료 요청 안내",["항목별 담당 부서 확인","자료 요청 메신저 발송"],"","학교정보공시 업무 안내(샘플)","NAS2026 > 과학정보부 > 정보공시","ok"],
+ ["2026-05-08","thanks","감사 편지 쓰기 주간 운영",["학급별 활동 안내","우수 사례 수합"],"어버이날·스승의 날과 묶으면 학급 부담이 적어요.","감사교육 운영 계획(샘플)","NAS2026 > 생활안전부 > 감사교육","ok"],
+ ["2026-10-30","thanks","감사 나눔 에세이 학급 제출 마감",["학급별 제출 현황 확인","미제출 학급 안내","우수작 1차 선별"],"마감 1주 전 전체 안내, 3일 전 미제출 학급에만 다시 안내. 개별 독촉보다 ‘마감 안내’ 형식이 부담이 적어요.","감사교육 운영 계획(샘플)","NAS2026 > 생활안전부 > 감사교육 > 에세이","ok"],
+ ["2026-11-13","thanks","감사 에세이 우수작 선정·시상 품의",["심사 기준 공유","시상 품의서 상신(지출·계약 담당과 협의)"],"","감사교육 운영 계획(샘플)","","ai"],
+ ["2026-12-11","thanks","감사교육 운영 결과 보고",["활동 사진 정리(편집출판 실무사 협조)","결과 보고 기안"],"","감사교육 운영 계획(샘플)","","ai"]
+];
+const BASE_CARDS=[
+ {duty:"hr5",title:"5학년 담임 연간 요령",tips:"현장체험학습은 업체 견적을 6주 전에 받아야 품의·계약이 밀리지 않는다.\n가정통신문은 3주 전에 나가야 회신서 수합이 여유 있다.\n상담 기록은 학교 내부 시스템에만 남긴다.",path:"NAS2026 > 5학년"},
+ {duty:"neis",title:"나이스 관리 요령",tips:"학년도 초 권한 부여는 첫 주 안에.\n성적·생기부 마감 안내는 1주 전 전체, 3일 전 미입력 학급에만.\n4세대 나이스 문의는 교육청 지원센터 공지부터 확인.",path:"NAS2026 > 과학정보부 > 나이스"},
+ {duty:"thanks",title:"감사교육 요령",tips:"감사 에세이 마감 1주 전·3일 전 두 번 안내한다.\n행사 지원(사진·출판)은 편집출판 실무사에게 미리 요청한다.\n시상 품의는 행정실 지출·계약 담당과 일정 협의.",path:"NAS2026 > 생활안전부 > 감사교육"}
+];
+
+/* ===================== 상태 ===================== */
+const pad=n=>String(n).padStart(2,"0");
+const toISO=d=>d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());
+const parse=s=>{const [y,m,d]=s.split("-").map(Number);return new Date(y,m-1,d)};
+const addDays=(s,n)=>{const d=parse(s);d.setDate(d.getDate()+n);return toISO(d)};
+const yearOf=m=>m>=3?SY:SY+1;
+const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const uid=()=>Math.random().toString(36).slice(2,10);
+const fmtD=s=>{const d=parse(s);return (d.getMonth()+1)+"/"+d.getDate()+"("+WEEK[d.getDay()]+")"};
+const KEY="tm3:state:v2";
+let ref=new Date();ref.setHours(0,0,0,0);
+if(toISO(ref)<"2026-03-02"||toISO(ref)>"2027-02-28") ref=parse("2026-10-23");
+
+const SAMPLE_CAL=`2026학년도 새솔초등학교 학사력(예시)
+3.2.(월) 입학식 및 시업식
+3.19.(목) 학부모 총회 및 학교설명회
+4.21.(화) 과학의 날 기념 행사
+5.4.(월)~8.(금) 감사 주간
+5.15.(금) 현장체험학습(1~4학년)
+5.27.(수)~29.(금) 6학년 수학여행
+6.10.(수)~12.(금) 1학기 학부모 상담 주간
+7.22.(수) 여름방학식
+8.24.(월) 2학기 개학식
+10.13.(화) 가을 운동회
+11.4.(수)~6.(금) 2학기 학부모 상담 주간
+11.20.(금) 5학년 가을 현장체험학습
+12.30.(수) 겨울방학식
+2027.2.10.(수) 졸업식
+2027.2.12.(금) 종업식`;
+
+function seed(){
+  const tasks=BASE.map(([date,duty,title,checks,tip,source,path,status])=>({id:uid(),date,duty,title,checks:checks.map(t=>({t,d:false})),tip,source,quote:"",path,status,origin:"sample",why:"",undone:false,sub:"",history:[]}));
+  return {
+    my:DEFAULT_MY.slice(),
+    tasks,
+    cards:BASE_CARDS.map(c=>({id:uid(),...c,status:"ok"})),
+    duty:"all",
+    calendar:{name:"새솔초 2026 학사력(예시)",events:parseCalendar(SAMPLE_CAL)},
+    dismissed:[],
+    snippets:["안녕하세요, 선생님. 오늘 수업 자료 전달드립니다.","바쁘신 중에 협조해 주셔서 감사합니다."],
+    metrics:{opens:0,ms:0,fromAlert:0,confirmed:0,edited:0,aiDrafts:0,msgs:0},
+    apiKey:localStorage.getItem("tm_api_key")||"",
+    apiProvider:localStorage.getItem("tm_api_provider")||"gemini"
+  };
+}
+let S;
+try{S=JSON.parse(localStorage.getItem(KEY))}catch(e){}
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}};
+
+/* 업무분장 → 탭 */
+let DUTIES=[],DUTY={};
+function dutyOf(id){
+  if(id==="sci")return {...SCI_COMMON};
+  const o=ORG_INDEX[id];if(o)return {id,name:o.name,dept:o.dept,team:o.team};
+  return {id,name:id,dept:"",team:""};
+}
+function refreshDuties(){
+  const list=S.my.map(dutyOf);
+  if((list.some(d=>d.dept==="과학정보부")||S.tasks.some(t=>t.duty==="sci"))&&!S.my.includes("sci"))list.push({...SCI_COMMON});
+  list.forEach((d,i)=>d.color=PALETTE[i%PALETTE.length]);
+  DUTIES=list;DUTY=Object.fromEntries(list.map(d=>[d.id,d]));
+  S.tasks.forEach(t=>{if(!DUTY[t.duty])DUTY[t.duty]={...dutyOf(t.duty),color:"var(--ink-2)",hidden:true}});
+}
+const gradeOf=d=>{const m=(d.name||"").match(/(\d)학년 담임/);return m?+m[1]:null};
+
+let page="home", selMonth=null;
+const T=id=>S.tasks.find(t=>t.id===id);
+const diff=t=>Math.round((parse(t.date)-ref)/864e5);
+const isDone=t=>t.checks.length>0&&t.checks.every(c=>c.d);
+const prog=t=>t.checks.length?Math.round(t.checks.filter(c=>c.d).length/t.checks.length*100):0;
+const mineIds=()=>DUTIES.map(d=>d.id);
+const inDuty=t=>S.duty==="all"?mineIds().includes(t.duty):t.duty===S.duty;
+const visible=()=>S.tasks.filter(inDuty).sort((a,b)=>a.date.localeCompare(b.date));
+function ddayHTML(t){
+  const d=diff(t); if(isDone(t)) return '<span class="dday past">완료</span>';
+  if(d===0) return '<span class="dday urgent">오늘</span>';
+  if(d===1) return '<span class="dday urgent">D-1</span>';
+  if(d>1&&d<=7) return '<span class="dday soon">D-'+d+'</span>';
+  if(d<0&&d>=-14) return '<span class="dday soon">'+(-d)+'일 지남</span>';
+  if(d<0) return '<span class="dday past">지난 일정</span>';
+  return '<span class="dday past">D-'+d+'</span>';
+}
+const badgeHTML=t=>{
+  if(t.status==="ok") return '<span class="badge ok">확정</span>';
+  if(t.origin==="rule") return '<span class="badge auto">스마트 초안</span>';
+  return '<span class="badge">'+(t.origin==="ai"?"AI 초안":"초안")+'</span>';
+};
+const dname=id=>DUTY[id]?DUTY[id].name:id;
+const dcolor=id=>DUTY[id]?DUTY[id].color:"var(--ink-2)";
+let tt;function toast(m){const el=document.getElementById("toast");el.textContent=m;el.classList.add("on");clearTimeout(tt);tt=setTimeout(()=>el.classList.remove("on"),2800)}
+
+/* ===================== 상단 메뉴 ===================== */
+document.querySelectorAll(".menu button").forEach(b=>b.onclick=()=>go(b.dataset.page));
+function go(p){page=p;closeMega();
+  document.querySelectorAll(".menu button").forEach(x=>{if(x.dataset.page===p)x.setAttribute("aria-current","page");else x.removeAttribute("aria-current")});
+  ["home","upload","handover","ask"].forEach(n=>document.getElementById("p-"+n).hidden=n!==p);
+  renderAll();window.scrollTo(0,0)}
+function renderDutybar(){
+  const box=document.getElementById("dutybar");
+  const cnt=id=>S.tasks.filter(t=>id==="all"?mineIds().includes(t.duty):t.duty===id).length;
+  box.innerHTML='<span class="lbl">내 업무</span>'+[{id:"all",name:"전체",color:"var(--ink)"}].concat(DUTIES).map(d=>
+    '<button class="dtab" role="tab" data-d="'+d.id+'" style="--cat:'+d.color+'" aria-selected="'+(S.duty===d.id)+'" title="'+esc(d.dept?d.dept+" › "+d.team:"")+'">'+(d.id==="all"?"":'<i></i>')+(d.dept&&d.dept!=="학급 담임"&&!d.common?'<span class="dept">'+esc(d.dept)+' ›</span>':'')+esc(d.name)+' <small>'+cnt(d.id)+'</small></button>').join("")+
+    '<button class="orgbtn" id="orgbtn" aria-expanded="'+(!document.getElementById("mega").hidden)+'">학교 업무분장 ▾</button>';
+  box.querySelectorAll(".dtab").forEach(b=>b.onclick=()=>{S.duty=b.dataset.d;save();selMonth=null;closeMega();renderAll()});
+  document.getElementById("orgbtn").onclick=()=>{const m=document.getElementById("mega");if(m.hidden){renderMega();m.hidden=false}else m.hidden=true;renderDutybar()};
+}
+function closeMega(){const m=document.getElementById("mega");if(!m.hidden){m.hidden=true}}
+function renderMega(){
+  const my=new Set(S.my);
+  let h='<div class="wrap"><div class="mega-head"><b>새솔초 업무분장</b><span class="muted">2023학년도 업무분장표 기준 · 담당자 이름은 표시하지 않습니다 · 맡은 업무에 체크하면 위 메뉴에 뜹니다.</span></div><div class="mega-cols">';
+  ORG.forEach(d=>{
+    h+='<div class="dept"><h3>'+esc(d.dept)+'</h3>';
+    d.teams.forEach(t=>{const tid=hash(d.dept+"|"+t.name+"|*");
+      if(d.dept!=="학급 담임")h+='<div class="team"><label class="team-n'+(my.has(tid)?" on":"")+'"><input type="checkbox" data-id="'+tid+'" '+(my.has(tid)?"checked":"")+'>'+esc(t.name)+'</label>';else h+='<div class="team">';
+      t.items.forEach(it=>{const id=orgItemId(d.dept,t.name,it),n=itemInfo(it).name;h+='<label class="it'+(my.has(id)?" on":"")+'"><input type="checkbox" data-id="'+id+'" '+(my.has(id)?"checked":"")+'>'+esc(n)+'</label>'});
+      h+='</div>'});
+    h+='</div>'});
+  h+='</div><div class="support"><h4>업무 요청처 (교직원 지원 업무 · 참고용)</h4><div class="mega-cols">'+SUPPORT.map(s=>'<div class="row2"><b>'+esc(s[0])+' · '+esc(s[1])+'</b><br>'+esc(s[2])+'</div>').join("")+'</div></div>'+
+   '<div class="row"><button class="btn small" id="megaClose">닫기</button></div></div>';
+  const m=document.getElementById("mega");m.innerHTML=h;
+  m.querySelectorAll("input[data-id]").forEach(i=>i.onchange=()=>{
+    const id=i.dataset.id;
+    if(i.checked){if(!S.my.includes(id))S.my.push(id);toast("‘"+dutyOf(id).name+"’을 내 업무에 추가했습니다")}
+    else{S.my=S.my.filter(x=>x!==id);if(S.duty===id)S.duty="all";toast("‘"+dutyOf(id).name+"’을 내 업무에서 뺐습니다")}
+    save();refreshDuties();renderMega();renderAll()});
+  document.getElementById("megaClose").onclick=()=>{m.hidden=true;renderDutybar()};
+}
+
+/* ===================== 학사력 파싱 & 제안 ===================== */
+const DATE_RE=/(?:(20\d{2})\s*[.\-\/년]\s*)?(\d{1,2})\s*[.월\/]\s*(\d{1,2})\s*일?\.?\s*(?:\(([월화수목금토일])\))?/;
+function parseCalendar(text){
+  const ev=[];
+  text.split(/\r?\n/).forEach(raw=>{
+    const line=raw.trim(); if(!line) return;
+    const m=line.match(DATE_RE); if(!m) return;
+    const M=+m[2],D=+m[3]; if(M<1||M>12||D<1||D>31) return;
+    const y=m[1]?+m[1]:yearOf(M); const dt=new Date(y,M-1,D); if(dt.getMonth()!==M-1) return;
+    let rest=line.slice(m.index+m[0].length); let end=null;
+    const r=rest.match(/^\s*[~∼\-–]\s*(?:(\d{1,2})\s*[.월]\s*)?(\d{1,2})\s*일?\.?\s*(?:\([월화수목금토일]\))?/);
+    if(r){const M2=r[1]?+r[1]:M;const e=new Date(M2<M?y+1:y,M2-1,+r[2]);if(e>dt)end=toISO(e);rest=rest.slice(r[0].length)}
+    const title=(line.slice(0,m.index)+" "+rest).replace(/^[\s\-–·•:|]+|[\s\-–·•:|]+$/g,"").replace(/\s{2,}/g," ").trim();
+    if(title.length<2||/^\d+$/.test(title)) return;
+    ev.push({id:uid(),date:toISO(dt),end,title,line});
+  });
+  const seen=new Set();return ev.filter(e=>{const k=e.date+e.title;if(seen.has(k))return false;seen.add(k);return true}).sort((a,b)=>a.date.localeCompare(b.date));
+}
+
+const LIB=[
+ {re:/개학식/,items:[["hr",-3,"2학기 학급 운영 준비",["2학기 시간표 확인","학급 규칙 다시 안내"],""],["neis",-5,"2학기 나이스 시간표·담임 변경 반영",["전출입·담임 변경 반영","교과전담 시간표 확인"],""]]},
+ {re:/시업식|입학식/,items:[["hr",-3,"학급 운영 준비(시간표·학급 규칙·기초조사서)",["시간표 확정본 받기","기초조사서 양식 준비","학급 규칙 초안"],"새 학기 첫 주에 몰리는 담임 업무를 미리 나눕니다."],["neis",-5,"나이스 학년도 초기 설정·권한 부여",["학급·교과 편성 반영","교원 권한 부여"],"첫 주에 권한이 안 풀리면 담임들이 출결을 못 넣습니다."],["sci",2,"개인정보 수집·이용 동의 안내 가정통신문",["관련 부서 처리 안내","가정통신문 발송"],"작년 과학정보부 업무표 3월 항목."]]},
+ {re:/학부모\s*총회|학교\s*설명회/,items:[["hr",-14,"학부모 총회 안내 가정통신문 확인",["학교 안내문 확인","학급 참석 회신 수합"],"총회 2주 전 안내가 일반적입니다(학교 안내 확인)."],["hr",-3,"학급 교육과정 안내 자료 준비",["학급 운영 계획 1쪽 정리","상담 신청 안내 포함"],""],["sci",-7,"정보통신윤리교육 가정통신문(학부모 총회)",["학교 상황에 맞게 문안 수정","총회 때 배부"],"작년 과학정보부 업무표 3월 항목."]]},
+ {re:/감사\s*주간/,items:[["thanks",-14,"감사 주간 운영 계획·학급 안내",["활동 안내문 작성","메신저 전체 안내","편집출판 실무사에 사진 지원 요청"],""],["thanks",5,"감사 주간 결과 정리",["학급별 활동 수합","우수 사례 정리"],""]]},
+ {re:/과학의\s*날|과학의\s*달/,items:[["sci",-28,"과학의 달 행사 계획·키트 구입",["행사 계획 수립(학교교육계획으로 갈음 가능)","키트 구입은 최대한 서두르기"],"작년 업무표: 키트는 보통 3월 말 전에 구입."]]},
+ {re:/현장\s*체험\s*학습|체험학습|소풍/,grade:true,items:[["hr",-42,"체험학습 장소·업체 컨택, 견적 받기",["후보지 2~3곳 협의(학년 협의)","업체 견적 2곳 이상","차량·보험 포함 여부 확인"],"품의·계약까지 4주가 걸려 6주 전에 시작합니다(5학년 인수인계 카드)."],["hr",-28,"체험학습 사전 답사·품의",["사전 답사(안전 점검표)","품의서 상신(지출·계약 담당과 협의)","체험학습 신청 실무사에 요청"],""],["hr",-21,"체험학습 가정통신문·회신서",["가정통신문 발송","회신서 수합","미회신 가정 확인"],"3주 전에 나가야 회신 수합이 여유 있습니다."],["hr",-7,"체험학습 사전 안전교육",["안전교육 실시","인솔·비상연락 체계 확인"],""],["hr",3,"체험학습 결과 정리",["결과 보고","비용 정산 확인"],""]]},
+ {re:/수학여행/,grade:true,items:[["hr",-35,"수학여행 사전 답사·안전 점검",["답사 일정 협의","안전 점검표 작성"],""],["hr",-28,"수학여행 품의서 상신",["견적·계약 서류 확인","품의서 상신"],"품의는 출발 4주 전까지."]]},
+ {re:/상담\s*주간|학부모\s*상담/,items:[["hr",-14,"학부모 상담 신청 안내",["신청서 양식 확인","회신 기한 정하기"],""],["hr",3,"상담 기록 정리",["기록은 학교 내부 시스템에만","후속 조치 학생 학년부장 공유"],""]]},
+ {re:/방학식/,items:[["hr",-5,"방학 중 생활 안내 가정통신문",["안전 수칙 안내","방학 과제 안내"],""],["sci",-5,"방학 중 기자재 관리 안내",["PC 먼지 제거·암호 수합","스마트기기 수합 상태 확인"],"작년 과학정보부 업무표 7월 항목."],["neis",-7,"학기말 생활기록부 입력 점검 안내(전 교사)",["점검 일정 메신저 안내","입력 누락 조회"],""]]},
+ {re:/운동회|체육대회/,items:[["hr",-14,"운동회 안내 가정통신문",["학교 안내문 확인","준비물 안내"],""],["hr",-3,"학급 운동회 준비물·응원 점검",["준비물 확인","역할 배정"],""]]},
+ {re:/졸업식/,items:[["g6",-35,"졸업식 순서안 협의·강당 예약",["순서안 초안","강당 예약"],""],["g6",-21,"졸업장·상장 명단 대조(학교 내부 원본)",["학교 내부 원본에서 1차 대조","학생 본인 확인으로 2차 대조"],"명단은 TeacherMate에 올리지 않고 원본 위치에서만 다룹니다."],["neis",-14,"졸업생 학교생활기록부 마감 점검",["입력 누락 조회","학년부장 교차 점검 요청"],""]]},
+ {re:/종업식|수료식/,items:[["hr",-10,"학년말 인수인계 카드 정리",["1년 기록으로 카드 초안 만들기","요령·원본 위치 보완"],"인수인계 메뉴에서 1년 기록으로 초안을 만들 수 있습니다."],["neis",-7,"학년말 학교생활기록부 마감",["교과 세특 확인","행동특성 확인"],""],["sci",-10,"교원용 PC 포맷·기자재 인수인계 계획",["포맷 방식 결정(실무사·업체)","대여 기기 반납 안내"],"작년 과학정보부 업무표 12~2월 항목."]]}
+];
+
+function weekday(iso,off){const d=parse(iso);const w=d.getDay();if(w===6)d.setDate(d.getDate()+(off>0?2:-1));else if(w===0)d.setDate(d.getDate()+(off>0?1:-2));return toISO(d)}
+function gradesIn(title){const r=title.match(/(\d)\s*~\s*(\d)\s*학년/);if(r){const a=[];for(let g=+r[1];g<=+r[2];g++)a.push(g);return a}const s=[...title.matchAll(/(\d)\s*학년/g)].map(m=>+m[1]);return s.length?s:null}
+function resolveRole(role,e,rule){
+  const my=DUTIES;
+  if(role==="hr"||role==="g6"){
+    const homes=my.filter(d=>gradeOf(d));const gs=gradesIn(e.title);
+    return homes.filter(d=>{const g=gradeOf(d);if(role==="g6")return g===6;if(rule.grade&&gs)return gs.includes(g);return true}).map(d=>d.id);
+  }
+  return my.some(d=>d.id===role)?[role]:[];
+}
+function suggestFromLibrary(events){
+  const out=[];
+  events.forEach((e,ei)=>LIB.forEach(rule=>{if(!rule.re.test(e.title))return;
+    rule.items.forEach(([role,off,title,checks,why])=>resolveRole(role,e,rule).forEach(duty=>{
+      const baseDate=off>0&&e.end?e.end:e.date;
+      out.push({id:uid(),ev:ei,duty,date:weekday(addDays(baseDate,off),off),off,title,checks,why,src:"lib",on:true});
+    }))}));
+  return dedupeSugs(out);
+}
+function dedupeSugs(list){const seen=new Set(S.tasks.map(t=>t.title+"|"+t.date));return list.filter(s=>{const k=s.title+"|"+s.date;if(seen.has(k))return false;seen.add(k);return true})}
+function sugToTask(s,events,calName){const e=events[s.ev];
+  return {id:uid(),date:s.date,duty:s.duty,title:s.title,checks:s.checks.map(t=>({t,d:false})),tip:"",source:"학사력: "+calName,quote:e.line,path:"",status:"ai",origin:s.src==="ai"?"ai":"library",
+    why:"학사력의 ‘"+e.title+"’("+fmtD(e.date)+") "+(s.off<0?(-s.off)+"일 전":s.off+"일 뒤")+" 준비 업무로 "+(s.src==="ai"?"AI가":"업무 사례에서")+" 제안했습니다."+(s.why?"\n"+s.why:""),undone:false,sub:"",history:[]}}
+
+/* ===================== 내 업무 ===================== */
+function nowItems(){
+  if(!S.calendar)return[];
+  const sugs=suggestFromLibrary(S.calendar.events).filter(s=>!S.dismissed.includes(s.title+"|"+s.date));
+  const lo=addDays(toISO(ref),-14),hi=addDays(toISO(ref),21);
+  const today=toISO(ref),evs=S.calendar.events;
+  return sugs.filter(s=>{const e=evs[s.ev];const over=(e.end||e.date)<today;return !(over&&s.off<0)}).filter(s=>s.date>=lo&&s.date<=hi&&(S.duty==="all"||s.duty===S.duty)).sort((a,b)=>a.date.localeCompare(b.date)).slice(0,6);
+}
+function renderNow(){
+  const box=document.getElementById("nowPanel");const items=nowItems();
+  if(!items.length){box.innerHTML="";return}
+  const ev=S.calendar.events;
+  box.innerHTML='<div class="nowp"><h2>학사력을 보니, 지금 시작할 일</h2><p class="muted" style="margin:0 0 6px">‘'+esc(S.calendar.name)+'’의 다가오는 행사를 보고 내 업무분장에 맞춰 제안합니다.</p>'+
+   items.map(s=>{const d=Math.round((parse(s.date)-ref)/864e5);return '<div class="item"><span class="when'+(d<0?" late":"")+'">'+fmtD(s.date)+'<br><small>'+(d<0?(-d)+"일 지남":d===0?"오늘":"D-"+d)+'</small></span><span class="chip" style="--cat:'+dcolor(s.duty)+'">'+esc(dname(s.duty))+'</span><span>'+esc(s.title)+'<span class="ev">‘'+esc(ev[s.ev].title)+'’('+fmtD(ev[s.ev].date)+') '+(s.off<0?(-s.off)+"일 전":s.off+"일 뒤")+(s.why?" · "+esc(s.why):"")+'</span></span><span class="row" style="margin:0;flex-wrap:nowrap"><button class="btn small" data-add="'+s.id+'">추가</button><button class="btn ghost small" data-skip="'+s.id+'">숨김</button></span></div>'}).join("")+
+   (items.length>1?'<div class="row"><button class="btn ghost small" id="nowAll">'+items.length+'건 모두 추가</button></div>':'')+'</div>';
+  const add=list=>{list.forEach(s=>S.tasks.push(sugToTask(s,ev,S.calendar.name)));S.metrics.aiDrafts+=list.length;save();renderAll();toast(list.length+"건을 초안으로 추가했습니다.")};
+  box.querySelectorAll("[data-add]").forEach(b=>b.onclick=()=>add(items.filter(s=>s.id===b.dataset.add)));
+  box.querySelectorAll("[data-skip]").forEach(b=>b.onclick=()=>{const s=items.find(x=>x.id===b.dataset.skip);S.dismissed.push(s.title+"|"+s.date);save();renderNow()});
+  const all=document.getElementById("nowAll");if(all)all.onclick=()=>add(items);
+}
+
+function renderHome(){
+  renderNow();
+  const v=visible(), refM=ref.getMonth()+1;
+  if(selMonth===null) selMonth=MONTHS.includes(refM)?refM:3;
+  const box=document.getElementById("months");box.innerHTML="";
+  MONTHS.forEach(m=>{
+    const ts=v.filter(t=>parse(t.date).getMonth()+1===m);
+    const b=document.createElement("button");b.setAttribute("role","tab");b.setAttribute("aria-selected",m===selMonth);
+    if(m===refM)b.classList.add("now");
+    b.innerHTML='<span class="m">'+m+'월</span><span class="dots">'+[...new Set(ts.map(t=>t.duty))].slice(0,5).map(d=>'<i style="--cat:'+dcolor(d)+'"></i>').join("")+'</span><span class="n">'+ts.length+'건</span>'+(S.calendar&&S.showEvents!==false?'<span class="n">행사 '+S.calendar.events.filter(e=>parse(e.date).getMonth()+1===m).length+'</span>':'');
+    b.onclick=()=>{selMonth=m;renderHome()};box.appendChild(b);
+  });
+  const ts=v.filter(t=>parse(t.date).getMonth()+1===selMonth);
+  const evs=(S.calendar&&S.showEvents!==false)?S.calendar.events.filter(e=>parse(e.date).getMonth()+1===selMonth):[];
+  let h='<div class="month-head"><h2>'+selMonth+'월</h2><p>'+(S.duty==="all"?"내 업무 전체":esc(dname(S.duty)))+' · 업무 '+ts.length+'건, 초안 '+ts.filter(t=>t.status!=="ok").length+'건'+(S.calendar?' · 학교 행사 '+S.calendar.events.filter(e=>parse(e.date).getMonth()+1===selMonth).length+'건':'')+'</p>'+(S.calendar?'<label class="muted" style="margin-left:auto"><input type="checkbox" id="evToggle" '+(S.showEvents!==false?"checked":"")+'> 학교 행사 함께 보기</label>':'')+'</div>';
+  if(!ts.length&&!evs.length){
+    const sci=S.duty==="sci"||(DUTY[S.duty]&&DUTY[S.duty].dept==="과학정보부");
+    h+='<div class="empty">이 달에 잡힌 업무가 없습니다.'+(sci?'<br>작년 과학정보부 업무표를 올리면 1년 업무가 채워집니다.<br><button class="btn" data-goto="sheet">작년 업무표 올리기</button>':'<br>학사력을 올리면 행사에 맞춘 준비 업무를 제안해 드립니다.<br><button class="btn" data-goto="cal">학사력 올리기</button>')+'</div>';
+  }else{
+    h+='<ul class="daylist">';
+    const rows=ts.map(t=>({k:"t",date:t.date,t})).concat(evs.map(e=>({k:"e",date:e.date,e}))).sort((a,b)=>a.date.localeCompare(b.date)||(a.k==="e"?-1:1));
+    rows.forEach(r=>{if(r.k==="e"){const e=r.e,d=parse(e.date);h+='<li class="ev"><span class="date">'+d.getDate()+'<small>'+WEEK[d.getDay()]+'</small></span><div class="schoolev">🏫 학교 행사 · <b>'+esc(e.title)+'</b>'+(e.end?' (~'+fmtD(e.end)+')':'')+'</div></li>';return}
+      const t=r.t,d=parse(t.date);
+      h+='<li class="'+(isDone(t)?"done":"")+'" style="--cat:'+dcolor(t.duty)+'"><span class="date">'+d.getDate()+'<small>'+WEEK[d.getDay()]+'</small></span>'+
+      '<button class="task'+(t.status!=="ok"?" draft":"")+'" data-id="'+t.id+'"><span class="t">'+esc(t.title)+'</span><span class="right">'+ddayHTML(t)+badgeHTML(t)+'</span>'+
+      '<span class="meta"><span style="color:'+dcolor(t.duty)+';font-weight:600">'+esc(dname(t.duty))+(t.sub?" · "+esc(t.sub):"")+'</span>'+(t.undone?'<span class="flag">작년 미완료</span>':'')+'<span>체크 '+prog(t)+'%</span>'+(t.tip?'<span>선임자 요령</span>':'')+((t.history||[]).length?'<span>지난 기록 '+t.history.length+'</span>':'')+'</span></button></li>';
+    });
+    h+='</ul>';
+  }
+  const mb=document.getElementById("monthBody");mb.innerHTML=h;
+  mb.querySelectorAll(".task").forEach(b=>b.onclick=()=>openTask(b.dataset.id,"timeline"));
+  const evt=document.getElementById("evToggle");if(evt)evt.onchange=()=>{S.showEvents=evt.checked;save();renderHome()};
+  mb.querySelectorAll("[data-goto]").forEach(b=>b.onclick=()=>{kind=b.dataset.goto;go("upload")});
+  renderAside();
+}
+
+function renderAside(){
+  const v=visible().filter(t=>t.status==="ok"&&!isDone(t));
+  const g={today:[],week:[],over:[]};
+  v.forEach(t=>{const d=diff(t);if(d>=0&&d<=1)g.today.push(t);else if(d>1&&d<=7)g.week.push(t);else if(d<0&&d>=-14)g.over.push(t)});
+  const drafts=visible().filter(t=>t.status!=="ok").length;
+  const n=g.today.length+g.week.length;
+  const c=document.getElementById("cntHome");c.textContent=n;c.hidden=n===0;
+  const sec=(title,list)=>list.length?'<h3>'+title+'</h3>'+list.map(t=>'<div class="rem" style="--cat:'+dcolor(t.duty)+'"><button class="open" data-id="'+t.id+'"><span class="t"><small>'+esc(dname(t.duty))+'</small>'+esc(t.title)+'</span>'+ddayHTML(t)+'</button><button class="msgbtn" data-msg="'+t.id+'">안내문</button></div>').join(""):"";
+  document.getElementById("aside").innerHTML='<h2>다가오는 할 일</h2><p class="muted" style="margin:0">'+(ref.getMonth()+1)+'월 '+ref.getDate()+'일 기준</p>'+
+    (n||g.over.length?sec("오늘·내일",g.today)+sec("이번 주",g.week)+sec("2주 안에 지난 미완료",g.over):'<p class="muted">7일 안에 다가오는 확정 업무가 없습니다.</p>')+
+    (drafts?'<div class="drafts">확인을 기다리는 <b>초안 '+drafts+'건</b>은 확정해야 알림이 갑니다.</div>':'');
+  document.querySelectorAll("#aside .open").forEach(b=>b.onclick=()=>openTask(b.dataset.id,"alert"));
+  document.querySelectorAll("#aside .msgbtn").forEach(b=>b.onclick=()=>{S.metrics.fromAlert++;openMsg(b.dataset.msg)});
+}
+
+/* ===================== 업무 상세 모달 ===================== */
+const dlg=document.getElementById("dlg");let openInfo=null;
+function gcal(t){const d=t.date.replace(/-/g,""),e=addDays(t.date,1).replace(/-/g,"");
+  return "https://calendar.google.com/calendar/render?action=TEMPLATE&text="+encodeURIComponent("[TeacherMate] "+t.title)+"&dates="+d+"/"+e+"&details="+encodeURIComponent(t.checks.map(c=>"- "+c.t).join("\n"))}
+function openTask(id,via){
+  const t=T(id); if(!t) return;
+  if(!openInfo||openInfo.id!==id){openInfo={id,at:Date.now(),via};S.metrics.opens++;if(via==="alert")S.metrics.fromAlert++;save()}
+  const cards=S.cards.filter(c=>c.duty===t.duty);const dd=DUTY[t.duty]||{};
+  let h='<div style="--cat:'+dcolor(t.duty)+'"><div class="cat">'+(dd.dept&&dd.dept!=="학급 담임"?esc(dd.dept)+" › ":"")+esc(dname(t.duty))+(t.sub?" · "+esc(t.sub):"")+'</div>'+
+  '<input class="title" id="fTitle" value="'+esc(t.title)+'" aria-label="업무명">'+
+  '<div class="line"><input type="date" id="fDate" value="'+t.date+'" aria-label="날짜"> ('+WEEK[parse(t.date).getDay()]+') '+ddayHTML(t)+badgeHTML(t)+
+  '<select id="fDuty" aria-label="업무분장">'+DUTIES.map(d=>'<option value="'+d.id+'"'+(d.id===t.duty?" selected":"")+'>'+esc(d.name)+'</option>').join("")+'</select></div>'+
+  '<h4>체크리스트</h4><ul class="cl">'+t.checks.map((c,i)=>'<li><label><input type="checkbox" data-i="'+i+'" '+(c.d?"checked":"")+'><span>'+esc(c.t)+'</span></label></li>').join("")+'</ul>';
+  if(t.why||t.undone) h+='<h4>이 초안을 만든 방법</h4><div class="tip alert">'+(t.undone?'<b style="color:var(--red)">작년 업무표에 미완료로 남은 업무입니다</b>':'')+esc(t.why)+'</div>';
+  if(t.tip) h+='<h4>선임자 요령</h4><div class="tip">'+esc(t.tip)+'</div>';
+  if((t.history||[]).length) h+='<h4>지난 기록 (해마다 쌓임)</h4><ul class="hist">'+t.history.slice().sort((a,b)=>b.y-a.y).map(x=>'<li><b>'+x.y+'학년도 · '+esc(x.src)+'</b>'+esc(x.t)+'</li>').join("")+'</ul>';
+  if(cards.length) h+='<h4>같은 업무분장의 인수인계 카드</h4>'+cards.slice(0,2).map(c=>'<div class="tip"><b>'+esc(c.title)+'</b>'+esc(c.tips.split("\n").slice(0,3).join("\n"))+'</div>').join('<div style="height:6px"></div>');
+  h+='<h4>근거</h4><div class="tip" style="font-size:13.5px"><b>'+esc(t.source||"근거 자료 없음")+'</b>'+(t.quote?'<mark>'+esc(t.quote)+'</mark>':'')+'</div>';
+  h+='<h4>원본 위치 (학교 NAS 폴더)</h4><div class="path"><input id="fPath" value="'+esc(t.path)+'" placeholder="예: NAS > 교무기획부 > 2026학년도 반편성" aria-label="원본 NAS 폴더 위치"><button class="btn ghost small" id="cp">경로 복사</button></div>';
+  h+='<div class="row"><button class="btn ghost small" id="mkMsg">안내 메시지 만들기</button><a class="btn ghost small" href="'+gcal(t)+'" target="_blank" rel="noopener">구글 캘린더에 추가</a></div>';
+  h+='<div class="dlg-foot">'+(t.status!=="ok"?'<button class="btn" id="cf">검토 완료, 확정하기</button>':'<span class="badge ok">교사가 확정한 업무</span>')+
+  '<span class="row" style="margin:0"><button class="btn ghost" id="del">삭제</button><button class="btn ghost" id="cl">닫기</button></span></div>'+
+  '</div>';
+  document.getElementById("dlgBody").innerHTML=h;
+  const edited=()=>{if(t.status!=="ok"&&!t.edited){t.edited=true;S.metrics.edited++}};
+  document.getElementById("fTitle").onchange=e=>{t.title=e.target.value.trim()||t.title;edited();save();renderAll()};
+  document.getElementById("fDate").onchange=e=>{if(e.target.value){t.date=e.target.value;edited();save();renderAll();openTask(id,via)}};
+  document.getElementById("fDuty").onchange=e=>{t.duty=e.target.value;edited();save();renderAll();openTask(id,via)};
+  dlg.querySelectorAll(".cl input").forEach(i=>i.onchange=()=>{t.checks[+i.dataset.i].d=i.checked;save();renderAll();if(isDone(t))toast("완료했습니다.")});
+  const fp=document.getElementById("fPath");fp.onchange=()=>{const v=fp.value.trim();if(privacyCheck(v).length){fp.value=t.path;return toast("개인정보가 포함되어 저장하지 않았습니다")}t.path=v;save();renderAll();toast("저장했습니다")};
+  document.getElementById("cp").onclick=async()=>{if(!t.path)return toast("경로를 먼저 입력하세요");try{await navigator.clipboard.writeText(t.path);toast("복사했습니다")}catch(e){toast("직접 복사해주세요")}};
+  const cf=document.getElementById("cf");if(cf)cf.onclick=()=>{t.status="ok";S.metrics.confirmed++;save();renderAll();openTask(id,via);toast("확정했습니다.")};
+  document.getElementById("mkMsg").onclick=()=>openMsg(id);
+  document.getElementById("del").onclick=()=>{S.tasks=S.tasks.filter(x=>x.id!==id);save();dlg.close();renderAll();toast("삭제했습니다")};
+  document.getElementById("cl").onclick=()=>dlg.close();
+  if(!dlg.open)dlg.showModal();
+}
+dlg.addEventListener("close",()=>{if(openInfo){S.metrics.ms+=Math.min(Date.now()-openInfo.at,10*60*1000);openInfo=null;save()}});
+dlg.addEventListener("click",e=>{if(e.target===dlg)dlg.close()});
+
+/* ===================== 안내 메시지 ===================== */
+const MSG_KINDS=[["all","교직원 전체 메신저"],["remind","미제출 학급 안내"],["parent","가정통신문 문단"]];
+function draftMsg(t,k){
+  const d=diff(t),when=fmtD(t.date),dd=d>0?"(D-"+d+")":d===0?"(오늘)":"";
+  const items=t.checks.filter(c=>!/수합|확인|선별|품의|정리/.test(c.t)).map(c=>"· "+c.t);
+  const who=gradeOf(DUTY[t.duty]||{})?dname(t.duty):dname(t.duty)+" 담당";
+  if(k==="all")return "안녕하세요, 선생님. "+who+"입니다.\n‘"+t.title+"’ 마감이 "+when+" "+dd+"입니다.\n"+(items.length?items.join("\n")+"\n":"")+"마감일까지 제출 부탁드립니다. 바쁘신 중에 협조해 주셔서 감사합니다.";
+  if(k==="remind")return "안녕하세요, 선생님. "+who+"입니다.\n‘"+t.title+"’이 "+when+"에 마감됩니다. 혹시 아직 준비 중이시면 마감일까지 보내 주시면 됩니다.\n이미 보내셨다면 이 메시지는 넘기셔도 됩니다. 감사합니다.";
+  return "학부모님께\n우리 학교는 "+when+"까지 ‘"+t.title.replace(/\s*(마감|안내)$/,"")+"’을(를) 진행합니다. 가정에서도 관심을 가지고 함께해 주시면 감사하겠습니다.\n자세한 사항은 담임교사에게 문의해 주시기 바랍니다.";
+}
+function openMsg(id){
+  const t=T(id);let k="all";S.metrics.msgs++;save();
+  const render=(text)=>{
+    document.getElementById("dlgBody").innerHTML='<div style="--cat:'+dcolor(t.duty)+'"><div class="cat">'+esc(dname(t.duty))+' · 안내 메시지</div><h2 style="margin:2px 0 4px;font-size:19px">'+esc(t.title)+'</h2><p class="muted" style="margin:0">'+fmtD(t.date)+' 마감</p>'+
+    '<div class="msgtabs">'+MSG_KINDS.map(([v,l])=>'<button data-k="'+v+'" aria-pressed="'+(k===v)+'">'+l+'</button>').join("")+'</div>'+
+    '<textarea id="msgText" style="min-height:170px">'+esc(text)+'</textarea>'+
+    '<h4>자주 쓰는 멘트</h4><div class="snips">'+S.snippets.map((s,i)=>'<button data-s="'+i+'">'+esc(s)+'</button>').join("")+'</div>'+
+    '<div class="row"><button class="btn" id="msgCopy">복사하기</button><button class="btn ghost" id="msgAi">AI로 다듬기</button><button class="btn ghost" id="msgSave">선택 문장 저장</button><span class="muted" id="msgNote"></span></div>'+
+    '<div class="dlg-foot"><button class="btn ghost" id="msgBack">업무로 돌아가기</button><button class="btn ghost" id="msgClose">닫기</button></div></div>';
+    const ta=document.getElementById("msgText");
+    document.querySelectorAll(".msgtabs button").forEach(b=>b.onclick=()=>{k=b.dataset.k;render(draftMsg(t,k))});
+    document.querySelectorAll(".snips button").forEach(b=>b.onclick=()=>{ta.value=ta.value.trimEnd()+"\n"+S.snippets[+b.dataset.s]});
+    document.getElementById("msgCopy").onclick=async()=>{try{await navigator.clipboard.writeText(ta.value);toast("복사했습니다")}catch(e){toast("선택 후 복사하세요")}};
+    document.getElementById("msgSave").onclick=()=>{const sel=ta.value.slice(ta.selectionStart,ta.selectionEnd).trim();if(!sel)return toast("문장을 선택하세요");if(!S.snippets.includes(sel))S.snippets.push(sel.slice(0,120));save();render(ta.value);toast("저장했습니다")};
+    document.getElementById("msgAi").onclick=async()=>{
+      const note=document.getElementById("msgNote");
+      note.textContent="다듬는 중…";
+      const p=`다음은 초등학교 교사가 보낼 '${MSG_KINDS.find(x=>x[0]===k)[1]}'이다. 정중하고 부담 없는 말투로 다듬어라. 날짜·업무명은 바꾸지 말고 메시지 본문만 출력.\n\n${ta.value}`;
+      try{
+        const r=await callLLM(p);
+        if(r){ta.value=r.trim();note.textContent="다듬었습니다."}
+        else{note.textContent="API 키가 설정되지 않아 로컬 기본 문안을 유지합니다."}
+      }catch(e){note.textContent="다듬기 실패: "+e.message}
+    };
+    document.getElementById("msgBack").onclick=()=>openTask(id,"msg");
+    document.getElementById("msgClose").onclick=()=>dlg.close();
+  };
+  render(draftMsg(t,k));if(!dlg.open)dlg.showModal();
+}
+
+/* ===================== AI 호출 및 규칙 엔진 ===================== */
+async function callLLM(prompt, options={}){
+  const key=S.apiKey||localStorage.getItem("tm_api_key");
+  const prov=S.apiProvider||localStorage.getItem("tm_api_provider")||"gemini";
+  if(!key) return null; // API 키가 없으면 null 반환 -> 스마트 규칙 엔진 fallback
+
+  if(prov==="gemini"){
+    const model="gemini-1.5-flash";
+    const url=`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`;
+    const res=await fetch(url,{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({
+        contents:[{parts:[{text:prompt}]}],
+        generationConfig:{
+          responseMimeType:options.json?"application/json":"text/plain",
+          temperature:0.2
+        }
+      })
+    });
+    if(!res.ok){
+      const err=await res.json().catch(()=>({}));
+      throw new Error(err.error?.message||`Gemini API 오류 (${res.status})`);
+    }
+    const data=await res.json();
+    const txt=data.candidates?.[0]?.content?.parts?.[0]?.text;
+    if(!txt) throw new Error("AI 응답 내용이 비어 있습니다.");
+    if(options.json){
+      const cleaned = txt.replace(/^```json\s*/i,"").replace(/\s*```$/,"").trim();
+      return JSON.parse(cleaned);
+    }
+    return txt;
+  } else if(prov==="openai"){
+    const url="https://api.openai.com/v1/chat/completions";
+    const body={
+      model:"gpt-4o-mini",
+      messages:[{role:"user",content:prompt}],
+      temperature:0.2
+    };
+    if(options.json) body.response_format={type:"json_object"};
+    const res=await fetch(url,{
+      method:"POST",
+      headers:{"Content-Type":"application/json","Authorization":`Bearer ${key}`},
+      body:JSON.stringify(body)
+    });
+    if(!res.ok){
+      const err=await res.json().catch(()=>({}));
+      throw new Error(err.error?.message||`OpenAI API 오류 (${res.status})`);
+    }
+    const data=await res.json();
+    const txt=data.choices?.[0]?.message?.content;
+    return options.json?JSON.parse(txt):txt;
+  } else if(prov==="claude"||prov==="anthropic"){
+    const url="https://api.anthropic.com/v1/messages";
+    const body={
+      model:"claude-3-5-haiku-20241022",
+      max_tokens:2048,
+      messages:[{role:"user",content:prompt}]
+    };
+    const res=await fetch(url,{
+      method:"POST",
+      headers:{
+        "Content-Type":"application/json",
+        "x-api-key":key,
+        "anthropic-version":"2023-06-01",
+        "anthropic-dangerous-direct-browser-access":"true"
+      },
+      body:JSON.stringify(body)
+    });
+    if(!res.ok){
+      const err=await res.json().catch(()=>({}));
+      throw new Error(err.error?.message||`Claude API 오류 (${res.status})`);
+    }
+    const data=await res.json();
+    const txt=data.content?.[0]?.text;
+    if(!txt) throw new Error("Claude 응답 내용이 비어 있습니다.");
+    if(options.json){
+      const cleaned = txt.replace(/^```json\s*/i,"").replace(/\s*```$/,"").trim();
+      return JSON.parse(cleaned);
+    }
+    return txt;
+  }
+  return null;
+}
+
+/* ── 규칙 기반 스마트 공문/문서 파서 (API 키 없을 때 100% 자동 작동) ── */
+function parseDocHeuristic(text, filename=""){
+  const lines=text.split(/\r?\n/).map(l=>l.trim()).filter(Boolean);
+  const cleanFn=filename.replace(/\.(hwp|hwpx|pdf|docx|txt)$/i,"").replace(/^[(\[]?[^()\]]+[)\]]\s*/,"").trim();
+
+  // 1. 제목 추론
+  let title="";
+  for(let i=0;i<Math.min(lines.length,10);i++){
+    const l=lines[i];
+    if(/^제목\s*[:\s]/.test(l)){ title=l.replace(/^제목\s*[:\s]*/,"").trim(); break; }
+    if(/(안내|계획|공모|대회|추진|운영|과제|방학숙제|에세이|결과)/.test(l) && l.length<=45 && !l.startsWith("1.") && !l.startsWith("가.")){
+      title=l; break;
+    }
+  }
+  if(!title) title=cleanFn || lines[0]?.slice(0,35) || "업무 공문·회의자료";
+
+  // 2. 부서 라우팅
+  let duty="thanks";
+  const full=(filename+" "+text).toLowerCase();
+  if(/나이스|neis|생기부|생활기록부|학적|출결/.test(full)) duty="neis";
+  else if(/공시|정보공시/.test(full)) duty="pub";
+  else if(/과학|실험|발명|생태|환경/.test(full)) duty="sci";
+  else if(/담임|학급|상담|가통|가정통신/.test(full)) duty="hr5";
+  else if(/감사|에세이|인성|봉사/.test(full)) duty="thanks";
+
+  // 3. 날짜 추출 헬퍼
+  const extractDate=(str)=>{
+    const m=str.match(/(?:(20\d{2})\s*[.\-\/년]\s*)?(\d{1,2})\s*[.월\/]\s*(\d{1,2})\s*일?/);
+    if(m){
+      const M=+m[2], D=+m[3];
+      if(M>=1&&M<=12&&D>=1&&D<=31){
+        const y=m[1]?+m[1]:yearOf(M);
+        return toISO(new Date(y,M-1,D));
+      }
+    }
+    return "";
+  };
+
+  // 4. 단계(steps) 파싱
+  const steps=[];
+  const checklist=[];
+  const unclear=[];
+  const stepRe=/^([가-하]|[0-9]{1,2}\)|\([0-9]{1,2}\)|[①-⑩]|단계\s*[0-9]|Step\s*[0-9])\.?\s*(.*)/i;
+
+  for(let i=0;i<lines.length;i++){
+    const l=lines[i];
+    // 유의사항 체크리스트 수합
+    if(/(유의사항|주의사항|체크리스트|협조사항|참고사항)/.test(l)){
+      for(let j=i+1;j<Math.min(lines.length,i+7);j++){
+        const nxt=lines[j];
+        if(nxt.match(/^[가-하]\.|\d+\./)) checklist.push(nxt.replace(/^[가-하]\.|\d+\.\s*/,"").trim());
+        else if(nxt.match(/^[-·•*※]/)) checklist.push(nxt.replace(/^[-·•*※]\s*/,"").trim());
+      }
+    }
+    // 단계별 항목
+    const sm=l.match(stepRe);
+    if(sm){
+      const content=sm[2].trim();
+      let due=extractDate(content);
+      if(!due && i+1<lines.length) due=extractDate(lines[i+1]);
+
+      let stepName=content;
+      let detail=content;
+      if(content.includes(":")){
+        const pts=content.split(":");
+        stepName=pts[0].trim();
+        detail=pts.slice(1).join(":").trim();
+      } else if(content.includes(" - ")){
+        const pts=content.split(" - ");
+        stepName=pts[0].trim();
+        detail=pts.slice(1).join(" - ").trim();
+      }
+      if(stepName.length>22) stepName=stepName.slice(0,20)+"…";
+      steps.push({
+        step:stepName||`단계 ${steps.length+1}`,
+        detail:detail||content,
+        due:due,
+        quote:l.slice(0,30)
+      });
+    }
+  }
+
+  // 표준 목차가 없으면 마감/제출 키워드 행 추출
+  if(steps.length===0){
+    lines.forEach(l=>{
+      const d=extractDate(l);
+      if(d&&(l.includes("까지")||l.includes("마감")||l.includes("제출")||l.includes("안내")||l.includes("실시")||l.includes("숙제"))){
+        steps.push({
+          step:l.slice(0,18),
+          detail:l,
+          due:d,
+          quote:l.slice(0,30)
+        });
+      }
+    });
+  }
+
+  // 기본 fallback 단계
+  if(steps.length===0){
+    const d=extractDate(text)||toISO(new Date(SY,9,30));
+    steps.push({step:"안내 및 준비",detail:lines[0]||"문서 내용 확인 및 학급 안내",due:"",quote:(lines[0]||"").slice(0,30)});
+    steps.push({step:"수합 및 마감",detail:"학생 과제·에세이 제출 확인",due:d,quote:(lines.find(l=>extractDate(l))||lines[1]||"").slice(0,30)});
+  }
+
+  if(checklist.length===0){
+    checklist.push("학생 개인정보(성명, 연락처 등) 노출 주의");
+    checklist.push("학급별 안내 및 마감 일정 사전 공지");
+  }
+
+  const dues=steps.map(s=>s.due).filter(Boolean).sort();
+  const deadline=dues.length?dues[dues.length-1]:"";
+
+  return {title,duty,deadline,steps,checklist,unclear};
+}
+
+/* ===================== 파일 읽기 ===================== */
+const loadScript=src=>new Promise((res,rej)=>{if(document.querySelector('script[src="'+src+'"]'))return res();const s=document.createElement("script");s.src=src;s.onload=res;s.onerror=rej;document.head.appendChild(s)});
+async function readPdf(f){
+  const base="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/";
+  await loadScript(base+"pdf.min.js");await loadScript(base+"pdf.worker.min.js");
+  const lib=window.pdfjsLib;lib.GlobalWorkerOptions.workerSrc=base+"pdf.worker.min.js";
+  const pdf=await lib.getDocument({data:await f.arrayBuffer()}).promise;let txt="";
+  for(let p=1;p<=Math.min(pdf.numPages,30);p++){const c=await (await pdf.getPage(p)).getTextContent();
+    let line="",lastY=null;c.items.forEach(it=>{const y=it.transform[5];if(lastY!==null&&Math.abs(y-lastY)>2){txt+=line.trimEnd()+"\n";line=""}line+=it.str;lastY=y});txt+=line+"\n\n"}
+  return txt.trim();
+}
+async function readDocx(f){await loadScript("https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js");return (await window.mammoth.extractRawText({arrayBuffer:await f.arrayBuffer()})).value.trim()}
+async function readHwp(f){
+  const X=await loadXLSX();await loadScript("https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako.min.js");
+  const CFB=X.CFB,inflateRaw=window.pako.inflateRaw,u8=new Uint8Array(await f.arrayBuffer());
+  if(u8[0]===0x50&&u8[1]===0x4B){
+    const z=CFB.read(u8,{type:"array"});
+    const secs=z.FullPaths.map((p,i)=>[p,z.FileIndex[i]]).filter(([p])=>/Contents\/section\d+\.xml$/i.test(p)).sort((a,b)=>+a[0].match(/section(\d+)/i)[1]-+b[0].match(/section(\d+)/i)[1]);
+    if(!secs.length)throw new Error("한글(HWPX) 본문을 찾지 못했습니다.");
+    const dec=new TextDecoder("utf-8");
+    return secs.map(([,fi])=>dec.decode(fi.content).replace(/<hp:tab[^>]*\/>/g,"\t").replace(/<hp:lineBreak[^>]*\/>/g,"\n").replace(/<\/hp:p>/g,"\n").replace(/<hp:t(?:\s[^>]*)?>([\s\S]*?)<\/hp:t>/g,(_,t)=>"\u0001"+t+"\u0002").replace(/<[^>]+>/g,"").replace(/[^\n\u0001\u0002]*?\u0001|\u0002/g,"")).join("\n")
+      .replace(/&lt;/g,"<").replace(/&gt;/g,">").replace(/&quot;/g,'"').replace(/&apos;/g,"'").replace(/&amp;/g,"&").replace(/\r/g,"").replace(/\n{3,}/g,"\n\n").trim();
+  }
+  const c=CFB.read(u8,{type:"array"});
+  const get=n=>{const i=c.FullPaths.findIndex(p=>p.replace(/^Root Entry\//,"")===n);return i>=0?c.FileIndex[i].content:null};
+  const fh=get("FileHeader");if(!fh)throw new Error("한글 파일 형식이 아닙니다.");
+  const props=fh[36]|(fh[37]<<8)|(fh[38]<<16)|(fh[39]<<24);
+  if(props&2)throw new Error("암호가 걸린 한글 파일입니다. 암호를 풀거나 PDF로 저장해 올려 주세요.");
+  const body=c.FullPaths.map(p=>p.replace(/^Root Entry\//,"")).filter(p=>/^BodyText\/Section\d+$/.test(p)).sort((a,b)=>+a.match(/\d+$/)[0]-+b.match(/\d+$/)[0]);
+  if((props&4)||!body.length)throw new Error("배포용(복사 방지) 한글 문서라 글자를 읽을 수 없습니다. PDF로 저장해 올려 주세요.");
+  const out=[];
+  for(const n of body){
+    let d=new Uint8Array(get(n));if(props&1)d=inflateRaw(d);
+    const dv=new DataView(d.buffer,d.byteOffset,d.byteLength);let p=0;
+    while(p+4<=d.length){const h=dv.getUint32(p,true);p+=4;const tag=h&0x3FF;let size=(h>>>20)&0xFFF;if(size===0xFFF){size=dv.getUint32(p,true);p+=4}
+      if(tag===67){let s="";for(let i=0;i+1<size;){const ch=dv.getUint16(p+i,true);
+        if(ch>=32){s+=String.fromCharCode(ch);i+=2}else if(ch===13||ch===10){s+="\n";i+=2}else if(ch===9){s+="\t";i+=16}else if([0,24,25,26,27,28,29,30,31].includes(ch)){i+=2}else i+=16}
+        out.push(s.replace(/\n$/,""))}
+      p+=size}
+  }
+  return out.join("\n").replace(/\n{3,}/g,"\n\n").trim();
+}
+
+async function loadXLSX(){await loadScript("https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js");return window.XLSX}
+function privacyCheck(text){
+  const r=[];const lines=text.split("\n");
+  const SUR="김이박최정강조윤장임한오서신권황안송류전홍고문양손배백허유남심노하곽성차주우구민진나지엄채원천방공현함변염여추도소석선설마길연위표명기반왕금옥육인맹제모탁국어은편용예봉경사부가복태목형피두감음빈동온호범좌팽승간상시갈단견당화창";
+  const names=new Set();lines.forEach(l=>{const m=l.match(/^\s*\d{1,3}\s*[.)\]\t,|]?\s*([가-힣]{2,4})(?=$|[\s\t,|(])/);if(m&&SUR.includes(m[1][0]))names.add(m[1])});
+  if(names.size>=5)r.push("번호가 붙은 이름 목록 "+names.size+"명");
+  if(/01[016789][-.\s]?\d{3,4}[-.\s]?\d{4}/.test(text))r.push("휴대전화 번호");
+  if(/\d{6}\s*-\s*[1-8]\d{6}/.test(text))r.push("주민등록번호 형식");
+  if(lines.some(l=>/[\t,|]/.test(l)&&/(학번|성명|생년월일|보호자)/.test(l)))r.push("명단 표 머리글");
+  return r;
+}
+
+/* ===================== 작년 업무표 ===================== */
+function sheetMonths(name){const ns=(name.match(/\d{1,2}/g)||[]).map(Number).filter(n=>n>=1&&n<=12);if(!ns.length)return[];
+  if(/~/.test(name)&&ns.length===2){const o=[];let m=ns[0];for(let k=0;k<12;k++){o.push(m);if(m===ns[1])break;m=m%12+1}return o}return ns}
+function workdays(months){const o=[];months.forEach(m=>{const y=yearOf(m),last=new Date(y,m,0).getDate();for(let d=1;d<=last;d++){const dt=new Date(y,m-1,d),w=dt.getDay();if(w>0&&w<6&&!(m===3&&d<2))o.push(dt)}});return o}
+function bullets(ref){const o=[];String(ref).split("\n").forEach(l=>{const t=l.trim();if(!t)return;if(/^(-|\*|※|\d+\.|▶)/.test(t))o.push(t.replace(/^(-|\*|※|\d+\.|▶)\s*/,""));else if(o.length)o[o.length-1]+=" "+t.replace(/^[·ㆍ]\s*/,"");else o.push(t)});return o.filter(x=>x.length>1).map(x=>x.length>90?x.slice(0,88)+"…":x)}
+function routeDuty(text){
+  const has=id=>DUTIES.some(d=>d.id===id);
+  if(/공시/.test(text)&&has("pub"))return "pub";
+  if(/나이스|NEIS|학적|생활기록부/.test(text)&&has("neis"))return "neis";
+  if(/감사/.test(text)&&has("thanks"))return "thanks";
+  return "sci";
+}
+function convertSheet(data,label,srcYear){
+  const shift=SY-srcYear;const groups=new Map();
+  data.rows.forEach(r=>{const ms=sheetMonths(r.s);if(!ms.length)return;const key=r.c.replace(/\s+/g," ").trim();
+    if(!groups.has(key))groups.set(key,{c:key,g:r.g||"",sheets:[],months:new Set(),refs:[],notes:[],lastDone:true});
+    const g=groups.get(key);g.sheets.push(r.s);ms.forEach(m=>g.months.add(m));if(r.r)g.refs.push(r.r);if(r.n&&!g.notes.includes(r.n))g.notes.push(r.n);g.lastDone=r.d});
+  const items=[...groups.values()];
+  const st={raw:data.rows.length,tasks:items.length,dated:0,shifted:0,undone:0,repeated:0,train:(data.train||[]).length,shiftEx:[],undoneEx:[]};
+  const roll=s=>s.replace(/(?<!\d)20(\d{2})(?!\d)/g,(_,y)=>"20"+pad(+y+shift));
+  const bySheet={};
+  items.forEach(g=>{let date=null,why="",orig="";
+    for(const r of g.refs){const m=r.match(/(\d{1,2})\.\s*(\d{1,2})\.\s*\(([월화수목금토일])\)/);
+      if(m){const M=+m[1],D=+m[2],w=WK[m[3]];let base=new Date(yearOf(M),M-1,D);if(isNaN(base))continue;st.dated++;orig=M+". "+D+".("+m[3]+")";
+        if(base.getDay()!==w){let best=null;for(let k=-3;k<=3;k++){const c=new Date(base);c.setDate(c.getDate()+k);if(c.getDay()===w&&(!best||Math.abs(k)<Math.abs(best.k)))best={c,k}}
+          why=srcYear+"학년도 "+M+". "+D+".("+m[3]+") 기준. 올해 같은 요일인 "+(best.c.getMonth()+1)+". "+best.c.getDate()+".("+m[3]+")로 잡았습니다.";
+          base=best.c;st.shifted++;if(st.shiftEx.length<5)st.shiftEx.push(g.c+": "+M+"/"+D+" → "+(base.getMonth()+1)+"/"+base.getDate())}
+        else why=srcYear+"학년도 "+M+". "+D+".("+m[3]+")과 올해 요일이 같아 그대로 옮겼습니다.";
+        date=base;break}}
+    if(!date)(bySheet[g.sheets[0]]=bySheet[g.sheets[0]]||[]).push(g);
+    g.date=date;g.why=why;g.orig=orig;if(g.sheets.length>1)st.repeated++;if(!g.lastDone){st.undone++;if(st.undoneEx.length<6)st.undoneEx.push(roll(g.c))}});
+  Object.entries(bySheet).forEach(([s,list])=>{const wd=workdays(sheetMonths(s));list.forEach((g,i)=>{g.date=wd[Math.floor((i+.5)*wd.length/list.length)]||wd[0];g.why=srcYear+"학년도 업무표에 날짜가 없어 "+s+" 안에 배치한 초안입니다."})});
+  const tasks=items.map(g=>{const ref=[...g.refs].sort((a,b)=>b.length-a.length)[0]||"";const bl=bullets(ref);
+    let tip=ref;if(g.notes.length)tip+=(tip?"\n":"")+"비고: "+g.notes.join(" / ").replace(/\n/g," ");
+    const title=roll(g.c);
+    return {id:uid(),key:g.c,date:toISO(g.date),duty:routeDuty(g.c+" "+ref),sub:g.g,title,checks:(bl.length>=2?bl:[g.c]).map(t=>({t:roll(t),d:false})),tip,
+      source:label+" › "+g.sheets.join(", ")+" 시트",quote:"",path:"",status:"ai",origin:"import",
+      why:g.why+(g.sheets.length>1?"\n작년엔 반복 기록된 업무를 하나로 묶었습니다.":""),undone:!g.lastDone,
+      history:[{y:srcYear,src:label,t:(g.orig?g.orig+" 처리. ":g.sheets.join("·")+" 시트. ")+(g.lastDone?"이행 완료.":"미완료로 남음.")}]}});
+  return {tasks,st,train:data.train||[]};
+}
+async function parseSheetFile(f){
+  const X=await loadXLSX();const wb=X.read(await f.arrayBuffer(),{type:"array"});
+  const rows=[],train=[];let all="",monthSheets=0;
+  wb.SheetNames.forEach(name=>{const a=X.utils.sheet_to_json(wb.Sheets[name],{header:1,defval:""});a.forEach(r=>all+=r.join(" ")+"\n");
+    const hi=a.findIndex(r=>r.some(c=>["내용","연수명"].includes(String(c).trim())));if(hi<0)return;const head=a[hi].map(c=>String(c).trim());
+    if(head.includes("연수명")){let cur="";const ti=head.indexOf("대상"),ri=head.indexOf("참고"),ni=head.indexOf("비고");a.slice(hi+1).forEach(r=>{if(r[1])cur=String(r[1]).replace(/\n/g," ");if(ri>=0&&r[ri])train.push({name:cur,target:ti>=0?String(r[ti]||""):"",ref:String(r[ri]),note:ni>=0?String(r[ni]||""):""})});return}
+    if(!sheetMonths(name).length)return;monthSheets++;
+    const gi=head.indexOf("구분"),ci=head.indexOf("내용"),ri=head.indexOf("참고"),di=head.findIndex(c=>/이행/.test(c)),ni=head.indexOf("비고");let g="";
+    a.slice(hi+1).forEach(r=>{const c=String(r[ci]).trim();if(c==="내용"||!c)return;if(gi>=0&&r[gi])g=String(r[gi]);const dv=di>=0?r[di]:true;
+      rows.push({s:name,g,c,r:ri>=0?String(r[ri]||""):"",d:!(dv===false||String(dv).toUpperCase()==="FALSE"),n:ni>=0?String(r[ni]||""):""})})});
+  return {rows,train,all,monthSheets};
+}
+
+/* ===================== 자료 올리기 화면 ===================== */
+let kind="cal", lastCal=null, lastDoc=null;
+const SAMPLE_DOC=`○○교육지원청
+제목  2026 감사 나눔 에세이 공모 운영 안내
+1. 관련: ○○교육지원청 생활교육과-0000(2026. 9. 28.)
+2. 학생들이 일상의 감사를 글로 나누는 에세이 공모를 다음과 같이 운영하오니 협조하여 주시기 바랍니다.
+가. 대상: 초등학교 3~6학년 학생
+나. 학급 안내: 2026. 10. 12.(월) ~ 10. 16.(금), 감사교육 담당이 학급별 안내문 배부
+다. 학급 제출: 2026. 10. 30.(금)까지 학급별 우수작 2편을 감사교육 담당에게 제출
+라. 학교 심사: 2026. 11. 2.(월) ~ 11. 6.(금), 학교 심사위원회에서 학교 대표작 선정
+마. 교육지원청 제출: 2026. 11. 13.(금)까지 학교 대표작 3편과 운영 결과를 제출
+3. 유의사항
+가. 작품에 학생 실명·연락처를 적지 않고 학교에서 부여한 번호만 기재할 것
+나. 시상은 학교 자체 계획에 따르며 품의 일정은 행정실과 협의할 것`;
+const BAD_DOC=`5학년 2반 반편성 참고 명단
+1  김민준  20260201  010-1234-5678
+2  이서연  20260202  010-2345-6789
+3  박지호  20260203  010-3456-7890`;
+
+function renderUpload(){
+  document.querySelectorAll(".kind").forEach(b=>b.setAttribute("aria-pressed",b.dataset.kind===kind));
+  document.getElementById("pasteHint").textContent={cal:"또는 학사력 본문을 붙여 넣으세요. (예: 11.20.(금) 5학년 현장체험학습)",sheet:"작년 업무표는 엑셀 파일로 올립니다.",doc:"또는 공문·회의자료 본문을 붙여 넣으세요."}[kind];
+  document.getElementById("paste").hidden=kind==="sheet";document.getElementById("pasteGo").hidden=kind==="sheet";
+  const sb=document.getElementById("sampleBtns");
+  sb.innerHTML=kind==="cal"?'<button class="btn ghost" data-s="cal">예시 학사력 넣기</button>':kind==="sheet"?'<button class="btn" data-s="sheet">삼각산초 업무표로 체험</button>':'<button class="btn ghost" data-s="doc">예시 공문(감사 에세이) 넣기</button><button class="btn ghost" data-s="bad">명단 포함 예시</button>';
+  sb.querySelectorAll("[data-s]").forEach(b=>b.onclick=()=>{const s=b.dataset.s;
+    if(s==="cal"){document.getElementById("paste").value=SAMPLE_CAL;runCalendar(SAMPLE_CAL,"새솔초 2026 학사력(예시)")}
+    else if(s==="sheet")runSheet({rows:SCI_SAMPLE.rows,train:SCI_SAMPLE.train},SCI_LABEL,2024);
+    else if(s==="doc"){document.getElementById("paste").value=SAMPLE_DOC;runDoc(SAMPLE_DOC,"감사 나눔 에세이 공문(예시)")}
+    else{document.getElementById("paste").value=BAD_DOC;runDoc(BAD_DOC,"명단 예시")}});
+}
+document.querySelectorAll(".kind").forEach(b=>b.onclick=()=>{kind=b.dataset.kind;document.getElementById("upOut").innerHTML="";document.getElementById("detected").innerHTML="";renderUpload()});
+document.getElementById("pasteGo").onclick=()=>{const t=document.getElementById("paste").value.trim();if(!t)return toast("본문을 붙여 넣어 주세요");kind==="cal"?runCalendar(t,"붙여 넣은 학사력"):runDoc(t,"붙여 넣은 자료")};
+const out=()=>document.getElementById("upOut");
+function blockIfPii(text){const bad=privacyCheck(text);if(bad.length){out().innerHTML='<div class="warn"><strong>올리지 않았습니다: 개인정보가 들어 있습니다</strong>발견: '+bad.join(", ")+'. 명단은 지우고 절차만 남겨 주세요.</div>';return true}return false}
+
+async function handleFile(f){
+  const ext=(f.name.split(".").pop()||"").toLowerCase();document.getElementById("detected").innerHTML="";
+  out().innerHTML='<div class="thinking"><i></i>‘'+esc(f.name)+'’을 읽고 분석하는 중입니다…</div>';
+  try{
+    if(ext==="xlsx"||ext==="xls"){
+      const p=await parseSheetFile(f);
+      if(p.monthSheets>=2&&p.rows.length){showDetected(f.name,"sheet");const y=+(f.name.match(/20\d{2}/)||[SY-1])[0];return runSheet({rows:p.rows,train:p.train},f.name.replace(/\.xlsx?$/i,""),y,p.all)}
+      showDetected(f.name,"cal");return runCalendar(p.all,f.name);
+    }
+    let text="";
+    if(ext==="hwp"||ext==="hwpx")text=await readHwp(f);
+    else if(ext==="pdf")text=await readPdf(f);else if(ext==="docx")text=await readDocx(f);else if(ext==="txt"||ext==="md"||f.type.startsWith("text/"))text=(await f.text()).trim();
+    else{out().innerHTML='<div class="warn"><strong>지원하지 않는 형식입니다</strong>PDF, 한글, 워드, 엑셀, 텍스트 파일을 올려 주세요.</div>';return}
+    if(!text){out().innerHTML='<div class="warn"><strong>글자를 찾지 못했습니다</strong>스캔본 이미지이거나 내용이 비어 있습니다.</div>';return}
+    const dateLines=text.split("\n").filter(l=>DATE_RE.test(l)).length;
+    const isCal=/학사\s*력|학사\s*일정|시업식|종업식|방학식/.test(text)&&dateLines>=5;
+    const k=isCal?"cal":"doc";showDetected(f.name,k,text);document.getElementById("paste").value=text;
+    k==="cal"?runCalendar(text,f.name):runDoc(text,f.name);
+  }catch(e){out().innerHTML='<div class="warn"><strong>파일을 읽지 못했습니다</strong>'+esc(e&&e.message&&/[가-힣]/.test(e.message)?e.message:"암호가 걸렸거나 손상된 파일일 수 있습니다.")+'</div>'}
+}
+function showDetected(name,k,text){
+  kind=k;renderUpload();const label={cal:"학사력",sheet:"작년 업무표",doc:"공문·회의자료"};
+  document.getElementById("detected").innerHTML='<div class="detected">📄 ‘'+esc(name)+'’을 <b>'+label[k]+'</b>(으)로 인식했습니다.'+(text?' <label>다르면 <select id="reKind">'+["cal","doc"].map(x=>'<option value="'+x+'"'+(x===k?" selected":"")+'>'+label[x]+'</option>').join("")+'</select></label>':'')+'</div>';
+  const rk=document.getElementById("reKind");if(rk)rk.onchange=()=>{kind=rk.value;renderUpload();kind==="cal"?runCalendar(text,name):runDoc(text,name)};
+}
+document.getElementById("upFile").onchange=e=>{const f=e.target.files[0];if(f)handleFile(f);e.target.value=""};
+const drop=document.getElementById("drop");
+["dragenter","dragover"].forEach(t=>drop.addEventListener(t,e=>{e.preventDefault();drop.classList.add("over")}));
+["dragleave","drop"].forEach(t=>drop.addEventListener(t,e=>{e.preventDefault();drop.classList.remove("over")}));
+drop.addEventListener("drop",e=>{const f=e.dataTransfer.files&&e.dataTransfer.files[0];if(f)handleFile(f)});
+
+/* 학사력 */
+function runCalendar(text,name,note){
+  if(blockIfPii(text))return;
+  const events=parseCalendar(text);
+  if(events.length<2){out().innerHTML='<div class="warn"><strong>행사를 찾지 못했습니다</strong>‘3.19.(목) 학부모 총회’처럼 날짜와 행사가 한 줄에 있는 학사력을 넣어 주세요.</div>';return}
+  S.calendar={name,events};save();
+  lastCal={name,events,sugs:suggestFromLibrary(events),aiTried:false,note};S.showEvents=true;save();renderCalendar();
+}
+function renderCalendar(){
+  const c=lastCal;const by={};c.sugs.forEach(s=>(by[s.ev]=by[s.ev]||[]).push(s));
+  let h='<div class="panel">'+(c.note?'<div class="info" style="margin:0 0 12px">'+esc(c.note)+'</div>':'')+'<h2>‘'+esc(c.name)+'’에서 행사 '+c.events.length+'건을 찾았습니다</h2><p class="sub">학교 전체 행사 '+c.events.length+'건을 1년 업무 지도에 함께 표시합니다. 내 업무 기준으로 준비 업무 '+c.sugs.length+'건을 제안합니다.</p>';
+  c.events.forEach((e,i)=>{const list=(by[i]||[]).sort((a,b)=>a.date.localeCompare(b.date));
+    h+='<div class="evt"><div class="evt-head"><span class="d">'+fmtD(e.date)+(e.end?"~"+fmtD(e.end):"")+'</span><b>'+esc(e.title)+'</b><span class="q">'+(list.length?list.length+"건 제안":"내 업무와 관련 없음")+'</span></div>'+
+    list.map(s=>'<label class="sug"><input type="checkbox" data-id="'+s.id+'" '+(s.on?"checked":"")+'><span class="dd">'+fmtD(s.date)+'<br>'+(s.off<0?"D"+s.off:"D+"+s.off)+'</span><span class="chip" style="--cat:'+dcolor(s.duty)+'">'+esc(dname(s.duty))+'</span><span>'+esc(s.title)+(s.why?'<span class="why">'+esc(s.why)+'</span>':'')+'</span><span class="src'+(s.src==="ai"?" ai":"")+'">'+(s.src==="ai"?"AI 제안":"업무 사례")+'</span></label>').join("")+'</div>'});
+  const n=c.sugs.filter(s=>s.on).length;
+  h+='<div class="sticky-act"><button class="btn" id="calAdd"'+(n?"":" disabled")+'>선택한 '+n+'건을 내 업무에 초안으로 추가</button>'+(c.aiTried?'':'<button class="btn ghost" id="calAi">AI에게 추가 제안 받기</button>')+'<span class="muted" id="calMsg"></span></div></div>';
+  out().innerHTML=h;
+  out().querySelectorAll(".sug input").forEach(i=>i.onchange=()=>{c.sugs.find(s=>s.id===i.dataset.id).on=i.checked;renderCalendar()});
+  document.getElementById("calAdd").onclick=()=>{const ch=c.sugs.filter(s=>s.on);ch.forEach(s=>S.tasks.push(sugToTask(s,c.events,c.name)));
+    S.metrics.aiDrafts+=ch.length;save();c.sugs=c.sugs.filter(s=>!s.on);selMonth=parse(ch[0].date).getMonth()+1;go("home");toast(ch.length+"건을 초안으로 추가했습니다.")};
+  const ai=document.getElementById("calAi");if(ai)ai.onclick=()=>calAI();
+}
+async function calAI(){
+  const c=lastCal,msg=document.getElementById("calMsg"),btn=document.getElementById("calAi");btn.disabled=true;msg.textContent="AI가 행사별 준비 업무를 분석하고 있습니다…";
+  const prompt=`너는 한국 초등학교 교사의 학교 업무 비서다. 아래 학사력 행사와 교사의 업무분장을 보고, 각 업무분장 담당 교사가 그 행사 전후에 실제로 해야 할 준비·후속 업무를 제안하라.
+규칙: 이미 제안된 업무와 겹치지 않게. 최대 10개.
+JSON 배열만 출력: [{"event":행사번호,"duty":"업무분장 id","offset":행사일 기준 일수(음수=전, 양수=후, -60~14),"title":"할 일(30자 이내)","checks":["체크리스트 2~3개"],"reason":"왜 필요한지 한 문장"}]
+업무분장: ${DUTIES.map(d=>d.id+"="+(d.dept?d.dept+" ":"")+d.name).join(", ")}
+행사:
+${c.events.map((e,i)=>i+") "+e.date+(e.end?"~"+e.end:"")+" "+e.title).join("\n")}
+이미 제안된 업무:
+${c.sugs.map(s=>s.ev+") "+s.title).join("\n")||"없음"}`;
+  try{
+    const arr=await callLLM(prompt,{json:true});
+    if(!arr) throw new Error("API 키를 등록하지 않아 AI 제안을 사용할 수 없습니다. 설정에서 키를 등록해주세요.");
+    const ids=DUTIES.map(d=>d.id);
+    const add=(Array.isArray(arr)?arr:[]).filter(x=>c.events[x.event]&&ids.includes(x.duty)&&Number.isFinite(+x.offset)&&x.title).slice(0,12).map(x=>{const e=c.events[x.event],off=Math.max(-60,Math.min(30,Math.round(+x.offset)));
+      return {id:uid(),ev:x.event,duty:x.duty,date:weekday(addDays(off>0&&e.end?e.end:e.date,off),off),off,title:String(x.title).slice(0,40),checks:(Array.isArray(x.checks)?x.checks:[]).slice(0,4).map(String),why:String(x.reason||"").slice(0,120),src:"ai",on:false}});
+    c.sugs=c.sugs.concat(dedupeSugs(add));c.aiTried=true;renderCalendar();
+    document.getElementById("calMsg").textContent="AI 제안 "+add.length+"건을 추가했습니다.";
+  }catch(e){msg.textContent=e.message||"AI 제안 실패";btn.disabled=false}
+}
+
+/* 업무표 */
+function runSheet(data,label,srcYear,allText){
+  if(allText&&blockIfPii(allText))return;
+  const r=convertSheet(data,label,srcYear||2024);const s=r.st;
+  const existing=new Map(S.tasks.filter(t=>t.key).map(t=>[t.key,t]));
+  const merge=r.tasks.filter(t=>existing.has(t.key)),fresh=r.tasks.filter(t=>!existing.has(t.key));
+  const routed={};fresh.forEach(t=>routed[t.duty]=(routed[t.duty]||0)+1);
+  out().innerHTML='<div class="panel"><h2>‘'+esc(label)+'’ ('+srcYear+'학년도) 정리 결과</h2>'+
+   '<div class="stats"><div class="stat"><b>'+s.raw+'</b><span>업무표의 원래 행</span></div><div class="stat"><b>'+s.tasks+'</b><span>업무로 정리 ('+s.repeated+'건 병합)</span></div><div class="stat"><b>'+s.shifted+'</b><span>날짜 조정</span></div><div class="stat"><b style="color:var(--red)">'+s.undone+'</b><span>미완료 업무</span></div></div>'+
+   '<div class="cols"><div><h4>내 업무분장으로 분류</h4><ul>'+Object.entries(routed).map(([d,n])=>'<li><b style="color:'+dcolor(d)+'">'+esc(dname(d))+'</b> '+n+'건</li>').join("")+'</ul></div>'+
+   '<div><h4 style="color:var(--red)">미완료 업무</h4><ul>'+s.undoneEx.map(x=>'<li>'+esc(x)+'</li>').join("")+'</ul></div></div>'+
+   '<div class="row"><button class="btn" id="sheetAdd">'+fresh.length+'건 추가</button></div></div>';
+  document.getElementById("sheetAdd").onclick=()=>{
+    S.tasks=S.tasks.concat(fresh);
+    S.metrics.aiDrafts+=fresh.length;refreshDuties();S.duty="all";selMonth=3;save();go("home");toast(fresh.length+"건 추가 완료")};
+}
+
+/* ===================== 공문 → 흐름도 (AI + 스마트 휴리스틱) ===================== */
+async function runDoc(text,name){
+  if(blockIfPii(text))return;
+  if(text.length<15){out().innerHTML='<div class="info">자료가 너무 짧습니다. 공문이나 안내문 본문을 넣어 주세요.</div>';return}
+  out().innerHTML='<div class="thinking"><i></i>문서를 분석하여 업무 흐름도를 구성하고 있습니다…</div>';
+
+  let data=null, note="";
+  let usedMethod="heuristic"; // 'ai' | 'heuristic'
+
+  // 1. AI API 호출 시도 (API 키가 설정되어 있는 경우)
+  if(S.apiKey || localStorage.getItem("tm_api_key")){
+    const prompt=`너는 한국 초등학교 교사의 업무 정리를 돕는다. 아래 자료를 읽고 교사가 처리할 업무 흐름을 JSON으로만 답하라.
+형식: {"title":"업무명","duty":"${DUTIES.map(d=>d.id).join("|")} 중 가장 알맞은 업무분장 id","deadline":"YYYY-MM-DD 또는 빈 문자열","steps":[{"step":"단계명","detail":"교사가 할 일 한 문장","due":"YYYY-MM-DD 또는 빈 문자열","quote":"근거 원문 구절을 글자 그대로 복사(30자 이내)"}],"checklist":["유의사항을 할 일 형태로"],"unclear":["자료만으로 알 수 없는 점"]}
+업무분장: ${DUTIES.map(d=>d.id+"="+(d.dept?d.dept+" ":"")+d.name).join(", ")}. 자료에 없는 내용은 만들지 말 것. 연도가 없으면 2026학년도(2026.3~2027.2) 기준.
+자료:
+"""
+${text.slice(0,15000)}
+"""`;
+    try{
+      data=await callLLM(prompt,{json:true});
+      if(data && Array.isArray(data.steps) && data.steps.length){
+        usedMethod="ai";
+        note="AI 모델이 문서 내용을 정밀하게 분석하여 업무 흐름도를 구성했습니다.";
+      }
+    }catch(e){
+      console.warn("AI 호출 실패, 스마트 규칙 엔진으로 전환:", e);
+      note="AI 호출 오류로 스마트 규칙 엔진(No-Token)으로 전환하여 분석했습니다: "+e.message;
+    }
+  }
+
+  // 2. 스마트 규칙 엔진 Fallback (API 키가 없거나 AI 호출에 실패했을 때 즉시 작동!)
+  if(!data){
+    data=parseDocHeuristic(text, name);
+    usedMethod="heuristic";
+    if(!note) note="스마트 공문 분석기(내장 규칙 엔진)로 문서의 단계와 마감일을 자동 추출했습니다. (API 키 불필요)";
+  }
+
+  if(!DUTY[data.duty]||DUTY[data.duty].hidden) data.duty=S.duty!=="all"?S.duty:DUTIES[0].id;
+  lastDoc={data,text,name,note,usedMethod,split:true,added:[]};
+  addDocTasks();
+  renderDoc();
+}
+
+function addDocTasks(){
+  const L=lastDoc,data=L.data,steps=data.steps||[],valid=x=>/^\d{4}-\d{2}-\d{2}$/.test(x||"");
+  const fmt=s=>valid(s)?fmtD(s):"";
+  S.tasks=S.tasks.filter(t=>!L.added.includes(t.id));
+  const base={duty:data.duty,tip:(data.unclear||[]).length?"확인 필요: "+data.unclear.join(" / "):"",source:L.name,path:"",status:"ai",origin:L.usedMethod==="ai"?"ai":"rule",undone:false,sub:"",history:[]};
+  let added=[];
+  if(L.split&&steps.some(s=>valid(s.due))){
+    steps.forEach((s,i)=>{
+      const stepDate = valid(s.due) ? s.due : (data.deadline || toISO(ref));
+      added.push({...base,id:uid(),date:stepDate,title:data.title+" · "+s.step,checks:[{t:s.detail||s.step,d:false}].concat(i===steps.length-1?(data.checklist||[]).map(t=>({t,d:false})):[]),quote:s.quote||"",why:(L.usedMethod==="ai"?"AI":"스마트 분석기")+"가 구성한 업무 흐름입니다("+(i+1)+"/"+steps.length+"단계)."});
+    });
+  }else{
+    const due=valid(data.deadline)?data.deadline:(steps.map(s=>s.due).filter(valid).sort().pop()||toISO(ref));
+    added.push({...base,id:uid(),date:due,title:data.title||"자료에서 만든 업무",checks:steps.map(s=>({t:s.step+(fmt(s.due)?" (~"+fmt(s.due)+")":""),d:false})).concat((data.checklist||[]).map(t=>({t,d:false}))),quote:steps[0]&&steps[0].quote||"",why:"자료를 단계별로 정리한 업무 초안입니다."});
+  }
+  S.tasks=S.tasks.concat(added);
+  if(!L.counted){S.metrics.aiDrafts+=added.length;L.counted=true}
+  L.added=added.map(t=>t.id);
+  save();
+  renderDutybar();
+}
+
+function renderDoc(){
+  const {data,text,name,note,usedMethod}=lastDoc;
+  const fmt=s=>/^\d{4}-\d{2}-\d{2}$/.test(s||"")?fmtD(s):"";
+  let h='<div class="panel">'+
+  (note?'<div class="info" style="margin:0 0 12px;background:#F0F6FF;border-color:#BDD3FB;color:#1E3A8A">ℹ️ '+esc(note)+'</div>':'')+
+  '<div class="row" style="margin:0;justify-content:space-between"><h2>'+esc(data.title||"업무 흐름")+'</h2>'+
+  (usedMethod==="ai"?'<span class="badge" style="background:var(--hl);color:var(--hl-ink)">AI 분석 완료</span>':'<span class="badge auto">스마트 규칙 엔진 추출</span>')+
+  '</div>'+
+  '<p class="sub">근거 자료: '+esc(name)+(data.deadline?' · 최종 마감 '+fmt(data.deadline):'')+'</p><ol class="steps">';
+  (data.steps||[]).forEach((s,i)=>{
+    const found=s.quote&&text.includes(s.quote);
+    h+='<li><span class="st">'+esc(s.step)+'</span>'+(fmt(s.due)?'<span class="due">~'+fmt(s.due)+'</span>':'')+'<div class="dt">'+esc(s.detail||"")+'</div>'+(found?'<button class="qbtn" data-i="'+i+'">원문 근거 보기</button><div id="q'+i+'" hidden></div>':'<span class="qbtn miss">원문 구절 연결</span>')+'</li>';
+  });
+  h+='</ol>';
+  if((data.checklist||[]).length)h+='<div class="checks"><h4>유의사항 체크리스트</h4><ul>'+data.checklist.map(c=>'<li>'+esc(c)+'</li>').join("")+'</ul></div>';
+  if((data.unclear||[]).length)h+='<div class="checks" style="background:var(--red-bg)"><h4 style="color:var(--red)">확인 필요</h4><ul>'+data.unclear.map(c=>'<li>'+esc(c)+'</li>').join("")+'</ul></div>';
+  const n=lastDoc.added.length;
+  h+=(n?'<div class="good"><b>내 업무에 초안 '+n+'건을 생성했습니다.</b> 마감일정에 맞춰 D-day 알림을 받으려면 검토 후 확정하세요.</div>':'<div class="info">내 업무에 넣지 않았습니다.</div>')+
+   '<div class="row"><label>담당 업무분장: <select id="docDuty">'+DUTIES.map(d=>'<option value="'+d.id+'"'+(d.id===data.duty?" selected":"")+'>'+esc(d.name)+'</option>').join("")+'</select></label><label><input type="checkbox" id="docSplit" '+(lastDoc.split?"checked":"")+'> 단계마다 따로 일정 분할</label>'+
+   (n?'<button class="btn" id="docGo">내 업무(캘린더)에서 보기</button><button class="btn ghost" id="docUndo">되돌리기</button>':'<button class="btn" id="docRe">다시 넣기</button>')+'</div></div>';
+  out().innerHTML=h;
+
+  out().querySelectorAll(".qbtn[data-i]").forEach(b=>b.onclick=()=>{
+    const i=+b.dataset.i,box=document.getElementById("q"+i),q=data.steps[i].quote;
+    if(!box) return;
+    if(box.hidden){
+      const idx=text.indexOf(q);
+      if(idx>=0){
+        const s=Math.max(0,text.lastIndexOf("\n",idx)+1);
+        let e=text.indexOf("\n",idx+q.length);if(e<0)e=text.length;
+        const line=text.slice(s,e),k=idx-s;
+        box.innerHTML='<blockquote>'+esc(line.slice(0,k))+'<mark>'+esc(q)+'</mark>'+esc(line.slice(k+q.length))+'</blockquote>';
+      } else {
+        box.innerHTML='<blockquote>'+esc(q)+'</blockquote>';
+      }
+      box.hidden=false;b.textContent="원문 닫기";
+    }else{box.hidden=true;b.textContent="원문 근거 보기"}
+  });
+
+  document.getElementById("docDuty").onchange=e=>{data.duty=e.target.value;S.tasks.forEach(t=>{if(lastDoc.added.includes(t.id))t.duty=data.duty});save();renderDutybar();toast("업무분장을 변경했습니다")};
+  document.getElementById("docSplit").onchange=e=>{lastDoc.split=e.target.checked;if(lastDoc.added.length)addDocTasks();renderDoc()};
+  const go2=document.getElementById("docGo");if(go2)go2.onclick=()=>{const f=T(lastDoc.added[0]);if(f){selMonth=parse(f.date).getMonth()+1;S.duty="all"}go("home")};
+  const un=document.getElementById("docUndo");if(un)un.onclick=()=>{S.tasks=S.tasks.filter(t=>!lastDoc.added.includes(t.id));lastDoc.added=[];save();renderDutybar();renderDoc();toast("취소했습니다")};
+  const re=document.getElementById("docRe");if(re)re.onclick=()=>{addDocTasks();renderDoc()};
+}
+
+/* ===================== 인수인계 ===================== */
+function renderHandover(){
+  const duties=S.duty==="all"?DUTIES:[DUTY[S.duty]];
+  let h='';
+  duties.forEach(d=>{
+    const cards=S.cards.filter(c=>c.duty===d.id);const ts=S.tasks.filter(t=>t.duty===d.id);const done=ts.filter(isDone).length;
+    h+='<h2 style="font-size:18px;margin:22px 0 4px;color:'+d.color+'">'+(d.dept&&d.dept!=="학급 담임"?'<span class="muted" style="font-weight:500">'+esc(d.dept)+' › </span>':'')+esc(d.name)+'</h2><p class="muted" style="margin:0 0 10px">업무 '+ts.length+'건 · 완료 '+done+'건 · 카드 '+cards.length+'장</p><div class="cards">';
+    h+=cards.map(c=>'<div class="card" style="--cat:'+d.color+'"><div class="row" style="margin:0;justify-content:space-between"><span class="chip" style="--cat:'+d.color+'">'+esc(d.name)+'</span>'+(c.status==="ok"?'<span class="badge ok">확정</span>':'<span class="badge">초안</span>')+'</div><h3>'+esc(c.title)+'</h3><div class="tips">'+esc(c.tips)+'</div>'+'<div class="path"><input data-cpath="'+c.id+'" value="'+esc(c.path||"")+'" placeholder="NAS 폴더 위치" aria-label="원본 NAS 폴더 위치"></div>'+(c.status!=="ok"?'<div class="row"><button class="btn small" data-ok="'+c.id+'">확정</button></div>':'')+'</div>').join("")||'<div class="empty" style="grid-column:1/-1">카드가 없습니다.</div>';
+    h+='</div><div class="row"><button class="btn ghost" data-draft="'+d.id+'">1년 기록으로 카드 초안 만들기</button><button class="btn ghost" data-dl="'+d.id+'">인수인계서 내려받기 (.md)</button></div>';
+  });
+  const b=document.getElementById("hoBody");b.innerHTML=h;
+  b.querySelectorAll("[data-ok]").forEach(x=>x.onclick=()=>{S.cards.find(c=>c.id===x.dataset.ok).status="ok";save();renderHandover();toast("확정했습니다")});
+  b.querySelectorAll("[data-cpath]").forEach(x=>x.onchange=()=>{S.cards.find(c=>c.id===x.dataset.cpath).path=x.value.trim();save();toast("저장했습니다")});
+  b.querySelectorAll("[data-draft]").forEach(x=>x.onclick=()=>{const c=draftCard(x.dataset.draft);if(!c)return toast("기록이 있는 업무가 없습니다");S.cards.push(c);save();renderHandover();toast("카드 초안을 생성했습니다.")});
+  b.querySelectorAll("[data-dl]").forEach(x=>x.onclick=()=>downloadHandover(x.dataset.dl));
+}
+function draftCard(duty){
+  const ts=S.tasks.filter(t=>t.duty===duty&&(t.tip||t.checks.some(c=>c.d)||(t.history||[]).length)).sort((a,b)=>a.date.localeCompare(b.date));
+  if(!ts.length)return null;
+  const lines=ts.slice(0,25).map(t=>{const d=parse(t.date);return "■ "+(d.getMonth()+1)+"월 "+t.title+(isDone(t)?" (완료)":"")+(t.tip?"\n  "+t.tip.split("\n")[0].slice(0,120):"")});
+  return {id:uid(),duty,status:"ai",title:dname(duty)+" 연간 업무 요령 (초안)",tips:lines.join("\n"),path:""};
+}
+function downloadHandover(duty){
+  const d=DUTY[duty];const ts=S.tasks.filter(t=>t.duty===duty).sort((a,b)=>a.date.localeCompare(b.date));const cards=S.cards.filter(c=>c.duty===duty);
+  let md="# "+d.name+" 업무 인수인계서 (2026학년도)\n\n## 요령 카드\n\n"+(cards.map(c=>"### "+c.title+"\n\n"+c.tips).join("\n\n")||"(없음)")+"\n\n## 1년 업무 일정\n\n| 날짜 | 업무 | 상태 |\n| --- | --- | --- |\n";
+  ts.forEach(t=>{md+="| "+t.date+" | "+t.title.replace(/\|/g,"/")+" | "+(isDone(t)?"완료":t.status==="ok"?"확정":"초안")+" |\n"});
+  const fn="인수인계서_"+d.name+"_2026.md";
+  const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([md],{type:"text/markdown"}));a.download=fn;a.click();
+}
+
+/* ===================== 물어보기 (스마트 검색 & RAG) ===================== */
+const chat=[];
+const SYN={"학추위":"학교추천위원회","생기부":"생활기록부","가통":"가정통신문","NEIS":"나이스","neis":"나이스","에세이":"에세이"};
+function keywords(q){
+  let s=q;Object.entries(SYN).forEach(([a,b])=>s=s.split(a).join(b));
+  const stop=new Set(["언제","어떻게","무엇","뭐","어디","누구","누가","해야","하나요","해요","돼","되나요","있어","있나요","알려줘","부터","까지","방법","담당","업무","요청","하면"]);
+  return [...new Set(s.split(/[\s,.?!·()]+/).map(w=>w.replace(/(은|는|이|가|을|를|에|의|도|로|으로|에서|부터|까지|하고|랑|와|과|야|요|해|해야|할|하나요|해요|하는|이야)$/,"")).filter(w=>w.length>=2&&!stop.has(w)))];
+}
+function search(q){
+  const ks=keywords(q);if(!ks.length)return[];
+  const items=S.tasks.filter(t=>DUTY[t.duty]).map(t=>({kind:"task",id:t.id,duty:t.duty,title:t.title,text:[t.title,t.tip,t.checks.map(c=>c.t).join(" ")].join(" "),t}))
+   .concat(S.cards.map(c=>({kind:"card",id:c.id,duty:c.duty,title:c.title,text:c.title+" "+c.tips,c})))
+   .concat((S.calendar?S.calendar.events:[]).map(e=>({kind:"event",id:e.id,duty:null,title:e.title,text:e.title+" "+e.line,e})))
+   .concat(SUPPORT.map((s,i)=>({kind:"org",id:"s"+i,duty:null,title:s[0]+" · "+s[1],text:s.join(" ")})))
+   .concat(ORG.flatMap(d=>d.teams.map(t=>({kind:"org",id:d.dept+t.name,duty:null,title:d.dept+" › "+t.name,text:d.dept+" "+t.name+" "+t.items.map(x=>itemInfo(x).name).join(" ")}))));
+  return items.map(it=>{
+    let sc=0;
+    ks.forEach(k=>{
+      if(it.title.includes(k)) sc+=4;
+      else if(it.text.includes(k)) sc+=1;
+    });
+    return {...it,sc};
+  }).filter(x=>x.sc>0).sort((a,b)=>b.sc-a.sc).slice(0,5);
+}
+
+async function ask(q){
+  q=q.trim();if(!q)return;chat.push({me:true,text:q});const hits=search(q);
+  const pending={me:false,text:"답변을 찾고 있습니다…",ev:hits};chat.push(pending);renderAsk();
+  if(!hits.length){pending.text="저장된 업무, 인수인계 카드, 학사력에서 관련된 내용을 찾지 못했습니다.";pending.unsure=true;return renderAsk()}
+
+  // AI 연동 시도
+  if(S.apiKey || localStorage.getItem("tm_api_key")){
+    const ctx=hits.map((h,i)=>"["+i+"] "+(h.kind==="task"?"업무 "+h.t.date+" ("+dname(h.duty)+") "+h.t.title+"\n체크: "+h.t.checks.map(c=>c.t).join(" / ")+(h.t.tip?"\n요령: "+h.t.tip:""):h.kind==="card"?"카드 ("+dname(h.duty)+") "+h.title+"\n"+h.c.tips:h.kind==="event"?"학사력 "+h.e.date+" "+h.e.title:"업무분장: "+h.text)).join("\n\n");
+    const prompt=`너는 초등학교 업무 비서다. 아래 '저장된 자료' 안에서만 사실을 찾아 교사의 질문에 3~4문장으로 친절하게 답하라. 사람 이름은 쓰지 마라.
+JSON 형식: {"answer":"답변 내용","uncertain":false}
+질문: ${q}
+저장된 자료:
+${ctx}`;
+    try{
+      const res=await callLLM(prompt,{json:true});
+      if(res && res.answer){
+        pending.text=res.answer;
+        pending.unsure=!!res.uncertain;
+        return renderAsk();
+      }
+    }catch(e){console.warn("챗봇 AI 오류, 로컬 검색 결과로 응답:", e)}
+  }
+
+  // 로컬 응답
+  const ev=hits.find(h=>h.kind==="event");
+  const tk=hits.find(h=>h.kind==="task");
+  let ans="";
+  if(ev) ans+=`학사력에 따르면 ‘${ev.e.title}’은(는) ${fmtD(ev.e.date)}${ev.e.end?'~'+fmtD(ev.e.end):''}에 예정되어 있습니다.\n`;
+  if(tk) ans+=`관련된 업무 ‘${tk.t.title}’의 마감일은 ${fmtD(tk.t.date)}입니다.\n`;
+  if(!ans) ans="관련된 자료를 찾았습니다. 아래 항목을 확인해보세요.";
+  pending.text=ans.trim();
+  renderAsk();
+}
+
+function renderAsk(){
+  const box=document.getElementById("chat");
+  box.innerHTML=chat.length?chat.map(m=>'<div class="msg '+(m.me?"me":"bot")+'">'+esc(m.text)+(m.unsure?'<br><span class="unsure">확인 필요 · 저장된 자료만으로는 명확하지 않습니다</span>':'')+
+    (!m.me&&m.ev&&m.ev.length?'<div class="ev">'+m.ev.map(h=>'<button style="--cat:'+(h.duty?dcolor(h.duty):"var(--ink-2)")+'" data-k="'+h.kind+'" data-id="'+esc(h.id)+'">'+(h.kind==="task"?"📅 "+h.t.date.slice(5)+" ":h.kind==="card"?"🗂️ ":h.kind==="event"?"🏫 학교 행사 · ":"🏢 ")+esc(h.title)+'</button>').join("")+'</div>':'')+'</div>').join(""):'<div class="msg bot">무엇이든 물어보세요. ‘감사 에세이 마감은 언제야?’, ‘체험학습 신청은 누구에게 요청해?’처럼 질문하시면 됩니다.</div>';
+  box.querySelectorAll(".ev button").forEach(b=>b.onclick=()=>{if(b.dataset.k==="task")openTask(b.dataset.id,"ask");else if(b.dataset.k==="card")go("handover");else if(b.dataset.k==="event"){selMonth=parse(S.calendar.events.find(x=>x.id===b.dataset.id).date).getMonth()+1;go("home")}else{document.getElementById("mega").hidden=false}});
+  const ex=document.getElementById("examples");ex.innerHTML=["감사 에세이 마감은 언제야?","현장체험학습은 언제야?","체험학습 신청은 누구에게 요청해?"].map(x=>'<button>'+x+'</button>').join("");
+  ex.querySelectorAll("button").forEach(b=>b.onclick=()=>ask(b.textContent));
+}
+document.getElementById("qGo").onclick=()=>{const i=document.getElementById("q");ask(i.value);i.value=""};
+document.getElementById("q").addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.isComposing){ask(e.target.value);e.target.value=""}});
+
+/* ===================== 설정·API·지표 ===================== */
+document.getElementById("gear").onclick=()=>{
+  const hasKey=!!(S.apiKey||localStorage.getItem("tm_api_key"));
+  const prov=S.apiProvider||localStorage.getItem("tm_api_provider")||"gemini";
+  document.getElementById("dlgBody").innerHTML='<h2 style="margin:0 0 4px;font-size:19px">설정 · AI API 토큰 · 지표</h2>'+
+  '<p class="muted" style="margin:0 0 12px">API 키를 설정하면 최첨단 AI가 공문 분석과 일정 제안을 수행하며, <b>API 키가 없어도 스마트 내장 파서가 100% 무료로 자동 동작</b>합니다.</p>'+
+
+  '<h4>🤖 AI API 설정 (선택 사항)</h4>'+
+  '<div class="panel" style="padding:12px;background:var(--paper);border:1px solid var(--rule);margin-bottom:12px">'+
+    '<div class="line" style="gap:12px">'+
+      '<label><b>제공자</b>: <select id="sProv">'+
+        '<option value="claude" '+(prov==="claude"||prov==="anthropic"?"selected":"")+'>Anthropic Claude (Claude 3.5 Haiku, 추천)</option>'+
+        '<option value="gemini" '+(prov==="gemini"?"selected":"")+'>Google Gemini (무료 티어 지원)</option>'+
+        '<option value="openai" '+(prov==="openai"?"selected":"")+'>OpenAI (GPT-4o-mini)</option>'+
+      '</select></label>'+
+      '<span class="api-badge '+(hasKey?"on":"off")+'">'+(hasKey?"API 연동 활성":"내장 규칙 엔진 모드")+'</span>'+
+    '</div>'+
+    '<div style="margin-top:8px">'+
+      '<input type="password" id="sApiKey" value="'+esc(S.apiKey||"")+'" placeholder="API 키를 입력하세요 (예: sk-ant-api03-...)" style="width:100%">'+
+    '</div>'+
+    '<p class="muted" style="margin:6px 0 0;font-size:12px">🔒 API 키는 브라우저(localStorage)에만 안전하게 보관되며 외부 서버나 Git 저장소에 절대 전송되지 않습니다. 채팅창에 키를 노출하지 마시고 여기서 직접 입력하세요.</p>'+
+    '<div class="row" style="margin-top:8px"><button class="btn small" id="sSaveKey">API 키 저장</button><button class="btn ghost small" id="sDelKey">키 삭제 (로컬 파서만 사용)</button></div>'+
+  '</div>'+
+
+  '<h4>기준일 (시연용)</h4><input type="date" id="sRef" value="'+toISO(ref)+'"> <span class="muted">D-day 계산 기준일</span>'+
+  '<h4>데이터 초기화</h4><div class="row" style="margin:0"><button class="btn ghost" id="sReset">샘플로 되돌리기</button><button class="btn ghost" id="sEmpty">빈 상태에서 시작</button></div>'+
+  '<div class="dlg-foot"><span></span><button class="btn" id="sClose">닫기</button></div>';
+
+  document.getElementById("sSaveKey").onclick=()=>{
+    const k=document.getElementById("sApiKey").value.trim();
+    const p=document.getElementById("sProv").value;
+    S.apiKey=k; S.apiProvider=p;
+    localStorage.setItem("tm_api_key",k);
+    localStorage.setItem("tm_api_provider",p);
+    save(); toast(k?"API 키를 저장했습니다. 이제 고급 AI가 동작합니다.":"키가 비어있어 로컬 모드로 전환됩니다.");
+    dlg.close();
+  };
+  document.getElementById("sDelKey").onclick=()=>{
+    S.apiKey=""; localStorage.removeItem("tm_api_key");
+    save(); toast("API 키를 삭제했습니다. 내장 스마트 규칙 엔진으로 동작합니다.");
+    dlg.close();
+  };
+  document.getElementById("sRef").onchange=e=>{if(e.target.value){ref=parse(e.target.value);selMonth=null;renderAll()}};
+  document.getElementById("sReset").onclick=()=>{S=seed();save();refreshDuties();dlg.close();selMonth=null;renderAll();toast("샘플로 복원했습니다")};
+  document.getElementById("sEmpty").onclick=()=>{const keep=S.my;S=seed();S.tasks=[];S.cards=[];S.calendar=null;S.my=keep;save();refreshDuties();dlg.close();selMonth=null;renderAll();toast("비웠습니다")};
+  document.getElementById("sClose").onclick=()=>dlg.close();
+  dlg.showModal();
+};
+
+/* 시작 */
+if(!S||!S.tasks||!S.my) S=seed();
+refreshDuties();
+function renderAll(){refreshDuties();renderDutybar();renderHome();if(page==="upload")renderUpload();if(page==="handover")renderHandover();if(page==="ask")renderAsk()}
+renderAll();
+</script>
+</body>
+</html>
