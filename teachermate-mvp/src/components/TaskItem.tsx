@@ -54,6 +54,33 @@ export function TaskItem({ task, duties, cards, today, onSave, onDelete, onToggl
           aria-label={`${task.title} 완료`}
           onChange={(e) => onToggleDone(task.id, e.target.checked)}
         />
+        {/* 가동초 스타일 4단계 유형 배지 */}
+        <span
+          style={{
+            fontSize: '11px',
+            fontWeight: 700,
+            padding: '2px 6px',
+            borderRadius: '4px',
+            whiteSpace: 'nowrap',
+            background: task.title.includes('기안') || task.title.includes('계획') || task.title.includes('품의')
+              ? '#fef3c7'
+              : task.title.includes('공문') || task.title.includes('보고') || task.title.includes('접수')
+              ? '#dcfce7'
+              : '#f3e8ff',
+            color: task.title.includes('기안') || task.title.includes('계획') || task.title.includes('품의')
+              ? '#b45309'
+              : task.title.includes('공문') || task.title.includes('보고') || task.title.includes('접수')
+              ? '#15803d'
+              : '#7e22ce',
+            border: '1px solid rgba(0,0,0,0.06)'
+          }}
+        >
+          {task.title.includes('기안') || task.title.includes('계획') || task.title.includes('품의')
+            ? '✍️ 기안'
+            : task.title.includes('공문') || task.title.includes('보고') || task.title.includes('접수')
+            ? '📥 공문'
+            : '⏳ 할일'}
+        </span>
         <button type="button" className="task-title" aria-expanded={open} onClick={startEdit}>
           {task.title}
         </button>
@@ -76,6 +103,70 @@ export function TaskItem({ task, duties, cards, today, onSave, onDelete, onToggl
 
       {open && (
         <div className="task-editor">
+          {/* 사기 진작: 3월 질문 방어 지수 */}
+          <div
+            style={{
+              background: '#ecfdf5',
+              border: '1px solid #a7f3d0',
+              borderRadius: '6px',
+              padding: '6px 12px',
+              fontSize: '12.5px',
+              fontWeight: 700,
+              color: '#047857',
+              marginBottom: '10px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px'
+            }}
+          >
+            🛡️ 후임자 문의 방어 지수: 100% (3월 퇴근 후 연락 올 확률 0%)
+          </div>
+
+          {/* 1초 복붙 패키지 */}
+          <div style={{ marginBottom: '12px' }}>
+            <span style={{ fontSize: '12px', fontWeight: 700, color: '#475569', display: 'block', marginBottom: '4px' }}>
+              📋 1초 복붙 패키지 (원클릭 클립보드 복사)
+            </span>
+            <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+              <button
+                type="button"
+                className="btn btn-small"
+                style={{ background: '#fef3c7', color: '#b45309', border: '1px solid #fde68a', fontWeight: 600 }}
+                onClick={async () => {
+                  const draftText = `[기안문 서식: ${draft.title}]\n1. 관련: 2026학년도 학교교육과정 운영 계획\n2. 위 건과 관련하여 다음과 같이 추진하고자 하오니 결재하여 주시기 바랍니다.\n  가. 일시: ${draft.dueDate ?? '2026-03'}\n  나. 대상: 해당 학급 및 담당 교원\n  다. 내용: ${draft.checklist.map((c) => c.text).join(', ') || '세부계획 참조'}\n  라. 소요예산: 해당 없음`;
+                  await navigator.clipboard.writeText(draftText);
+                  alert('✍️ 기안문 결재 원문이 복사되었습니다! NEIS에 붙여넣기 하세요.');
+                }}
+              >
+                ✍️ 기안문 원문 복사
+              </button>
+              <button
+                type="button"
+                className="btn btn-small"
+                style={{ background: '#f0f9ff', color: '#0369a1', border: '1px solid #bae6fd', fontWeight: 600 }}
+                onClick={async () => {
+                  const parentText = `[가정통신문 서식]\n학부모님 안녕하십니까.\n본교 교육활동에 늘 따뜻한 관심과 사랑을 보내주셔서 감사드립니다.\n'${draft.title}'과 관련하여 아래와 같이 안내드리오니 협조를 부탁드립니다.\n- 일시: ${draft.dueDate ?? '추후 안내'}\n- 문의: 담임교사`;
+                  await navigator.clipboard.writeText(parentText);
+                  alert('✉️ 가정통신문 양식이 복사되었습니다!');
+                }}
+              >
+                ✉️ 가정통신문 양식 복사
+              </button>
+              <button
+                type="button"
+                className="btn btn-small"
+                style={{ background: '#f1f5f9', color: '#334155', border: '1px solid #cbd5e1', fontWeight: 600 }}
+                onClick={async () => {
+                  const excelText = `연번,학번,성명,제출여부,비고\n1,50101,홍길동,O,\n2,50102,김철수,O,`;
+                  await navigator.clipboard.writeText(excelText);
+                  alert('📊 수합용 엑셀 서식이 복사되었습니다!');
+                }}
+              >
+                📊 엑셀 서식 복사
+              </button>
+            </div>
+          </div>
+
           <label>
             할 일
             <input value={draft.title} maxLength={200} onChange={(e) => setDraft({ ...draft, title: e.target.value })} />

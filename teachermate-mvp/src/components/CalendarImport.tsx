@@ -140,7 +140,7 @@ export function CalendarImport({ duties, today, onAdd }: Props) {
       title: it.title,
       note: it.endDate ? `기간: ~${formatKoreanDate(it.endDate)}` : '',
       dueDate: it.date || today,
-      status: 'draft',
+      status: 'confirmed',
       origin: 'calendar',
       checklist: [],
       sources: [
@@ -457,8 +457,9 @@ export function CalendarImport({ duties, today, onAdd }: Props) {
                 className="btn btn-primary"
                 disabled={selectedCount === 0 || pii.blocked}
                 onClick={handleAddDrafts}
+                style={{ fontSize: '14.5px', padding: '10px 20px', fontWeight: 700 }}
               >
-                선택한 {selectedCount}건을 초안으로 추가 →
+                선택한 {selectedCount}건을 1년 업무 지도(캘린더)에 즉시 반영하기 →
               </button>
             </div>
           </div>

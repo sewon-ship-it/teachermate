@@ -1,14 +1,12 @@
 import type { AppData, Duty, HandoverCard, Task } from '../lib/types';
-import { buildSampleData } from '../lib/sampleData';
+import { buildJungdaeInitialData } from './jungdaeData';
 import { hasBlockingPii } from '../lib/piiGuard';
 import { PiiBlockedError, type Repo } from './repo';
 
-const KEY = 'teachermate:v1';
+const KEY = 'teachermate:jungdae:v3';
 
 /**
- * 로컬 체험 모드.
- * localStorage 는 암호화된 저장소가 아니다. 같은 PC·브라우저 프로필을 쓰는 사람은 볼 수 있고,
- * 브라우저 데이터를 지우면 함께 사라진다. 그래서 샘플·비식별 자료 시연용으로만 쓴다.
+ * 로컬 체험 모드 (중대부초 2026학년도 실제 학사력·업무분장 탑재)
  */
 export class LocalRepo implements Repo {
   mode = 'local' as const;
@@ -20,7 +18,7 @@ export class LocalRepo implements Repo {
     } catch {
       /* 손상된 데이터는 샘플로 초기화 */
     }
-    const seed = buildSampleData();
+    const seed = buildJungdaeInitialData();
     this.write(seed);
     return seed;
   }
@@ -115,6 +113,6 @@ export class LocalRepo implements Repo {
   }
 
   resetToSample() {
-    this.write(buildSampleData());
+    this.write(buildJungdaeInitialData());
   }
 }

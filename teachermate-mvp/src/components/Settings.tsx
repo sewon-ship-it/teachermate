@@ -22,10 +22,41 @@ export function Settings({ repo, duties, onSaveDuty, onDeleteDuty, onReload, sch
   const [name, setName] = useState('');
   const [kind, setKind] = useState<DutyKind>('duty');
   const [invite, setInvite] = useState('');
+  const [apiKey, setApiKey] = useState(() => localStorage.getItem('tm_claude_api_key') || localStorage.getItem('tm_api_key') || '');
+  const [savedKey, setSavedKey] = useState(false);
+
+  const saveApiKey = () => {
+    localStorage.setItem('tm_claude_api_key', apiKey.trim());
+    localStorage.setItem('tm_api_key', apiKey.trim());
+    setSavedKey(true);
+    setTimeout(() => setSavedKey(false), 2500);
+  };
 
   return (
     <section className="panel">
-      <h1>데이터·보안</h1>
+      <h1>⚙️ 환경설정 및 데이터 관리</h1>
+
+      {/* Claude API 설정 */}
+      <div style={{ background: '#f8fafc', border: '1.5px solid #cbd5e1', borderRadius: '10px', padding: '16px', marginBottom: '24px' }}>
+        <h2 style={{ margin: '0 0 6px', fontSize: '17px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+          🤖 Claude AI API 설정
+        </h2>
+        <p className="hint" style={{ margin: '0 0 12px' }}>
+          API 키가 없어도 중대부초 199개 학사력 및 표준 서식으로 100% 동작합니다. Claude API 키를 입력하시면 실시간 질문 답변 및 AI 기안문 자동 생성 모드로 전환됩니다.
+        </p>
+        <div className="field-row tight">
+          <input
+            type="password"
+            placeholder="sk-ant-api03-..."
+            value={apiKey}
+            onChange={(e) => setApiKey(e.target.value)}
+            style={{ fontFamily: 'monospace', flex: 1 }}
+          />
+          <button type="button" className="btn btn-primary" onClick={saveApiKey}>
+            {savedKey ? '✅ 저장 완료!' : 'API 키 저장'}
+          </button>
+        </div>
+      </div>
 
       <h2>업무분장</h2>
       <p className="hint">담당자는 실명 대신 업무분장 이름으로 표기한다. (예: 6학년 부장, 정보 담당)</p>

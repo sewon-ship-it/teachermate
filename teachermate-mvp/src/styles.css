@@ -521,3 +521,10 @@ blockquote footer { font-size: .72rem; color: var(--muted); margin-top: .15rem; 
   .layout { padding: 1rem 1rem 3rem; }
 }
 @media(prefers-reduced-motion:reduce){ *{ transition:none!important; animation:none!important; } }
+
+/* ─── 가동초 스타일 전용 UI ─── */
+.gfilter-btn { transition: all 0.15s ease; }
+.gfilter-btn:hover { filter: brightness(0.96); }
+.gfilter-btn.active { box-shadow: 0 1px 3px rgba(0,0,0,0.15); }
+.view-btn.active { box-shadow: 0 1px 3px rgba(0,0,0,0.12); }
+.checklist-focus-view .chk-card:hover { border-color: #cbd5e1; }

@@ -13,16 +13,17 @@ import { FlowBuilder } from './components/FlowBuilder';
 import { Handover } from './components/Handover';
 import { Settings } from './components/Settings';
 import { SchoolChatbot } from './components/SchoolChatbot';
+import { JUNGDAE_EVENTS_2026 } from './data/jungdaeData';
 
 type View = 'timeline' | 'calendar' | 'flow' | 'handover' | 'chatbot' | 'settings';
 
 const VIEWS: Array<[View, string, string]> = [
-  ['timeline',  '1년 업무 지도',    '📅'],
+  ['timeline',  '1년 업무 지도',    '🗓️'],
   ['calendar',  '학사력 불러오기',   '📆'],
-  ['flow',      '자료 → 업무 흐름', '📋'],
+  ['flow',      '자료 → 업무 변환', '📋'],
   ['handover',  '업무 인수인계',     '🤝'],
   ['chatbot',   '학교 업무 챗봇',   '💬'],
-  ['settings',  '데이터·보안',      '⚙️'],
+  ['settings',  '환경설정·보안',    '⚙️'],
 ];
 
 const MY_DUTIES_KEY = 'teachermate:myDuties';
@@ -137,12 +138,29 @@ function Workspace({ repo, school, signOut, onCreateInvite }: WorkspaceProps) {
       {/* ── 최상단 헤더 ── */}
       <header className="topbar">
         <div className="brand">
-          <span className="brand-icon">📚</span>
+          <span className="brand-icon">🏫</span>
           <span className="brand-name">TeacherMate</span>
-          {school && <span className="brand-school">{school.name}</span>}
-          {!school && <span className="brand-school" style={{ color: '#85a8d8' }}>체험 모드</span>}
+          <span className="brand-school" style={{ color: '#bae6fd', fontWeight: 600, marginLeft: '8px' }}>
+            중대부초 업무 길잡이 (2026학년도)
+          </span>
         </div>
-        <div className="topbar-right">
+        <div className="topbar-right" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <button
+            type="button"
+            className="btn btn-small"
+            onClick={() => setView('settings')}
+            style={{
+              background: 'rgba(255,255,255,0.18)',
+              border: '1px solid rgba(255,255,255,0.35)',
+              color: '#fff',
+              fontWeight: 600,
+              padding: '5px 12px',
+              borderRadius: '6px',
+              cursor: 'pointer'
+            }}
+          >
+            ⚙️ 설정 (API 키)
+          </button>
           {signOut && <button type="button" className="btn-link" onClick={signOut}>로그아웃</button>}
         </div>
       </header>
@@ -171,6 +189,7 @@ function Workspace({ repo, school, signOut, onCreateInvite }: WorkspaceProps) {
           {view === 'timeline' && (
             <Timeline
               tasks={data.tasks} duties={data.duties} cards={data.cards} today={today}
+              events={JUNGDAE_EVENTS_2026}
               month={month} setMonth={setMonth}
               myDuties={myDuties} setMyDuties={setMyDuties}
               onSave={saveTask}
