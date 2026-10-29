@@ -15,6 +15,7 @@ export interface JungdaeEvent {
 export const JUNGDAE_EVENTS_2026: JungdaeEvent[] = JUNGDAE_CLEAN_EVENTS_2026;
 
 // 중대부초 2026 실제 업무분장 & 인수인계 카드 & 1년 업무 타임라인 초기 데이터
+// 개인정보보호(PII) 가이드라인에 따라 실명 대신 공식 직책명/역할명으로 표준화
 export function buildJungdaeInitialData(): {
   duties: Duty[];
   tasks: Task[];
@@ -22,24 +23,24 @@ export function buildJungdaeInitialData(): {
 } {
   const now = new Date().toISOString();
 
-  // 1. 중대부초 2026 실제 담당 선생님 및 부서 업무분장
+  // 1. 중대부초 2026 공식 업무분장 (실명 대신 직책/담당명으로 개인정보 보호)
   const duties: Duty[] = [
-    { id: 'd-grade1-lead', name: '1학년 부장 (이기남 부장님)', kind: 'grade' },
-    { id: 'd-affairs-lead', name: '교무부장 · 1학년 담임 (이정선 부장님)', kind: 'duty' },
-    { id: 'd-neis-info', name: '나이스 · 정보공시 · 감사교육 (박세원 선생님)', kind: 'duty' },
-    { id: 'd-grade4-magazine', name: '4학년 담임 · 교지 중앙동산 (김하정 선생님)', kind: 'grade' },
+    { id: 'd-grade1-lead', name: '1학년 부장 (학년대표)', kind: 'grade' },
+    { id: 'd-affairs-lead', name: '교무부장 (교무기획 총괄)', kind: 'duty' },
+    { id: 'd-science-lead', name: '과학정보부장 (스마트정보화 총괄)', kind: 'duty' },
+    { id: 'd-neis-info', name: '나이스 · 정보공시 · 감사교육 담당', kind: 'duty' },
+    { id: 'd-grade4-magazine', name: '4학년 담임 · 교지 중앙동산 편집담당', kind: 'grade' },
     { id: 'd-homeroom-5', name: '5학년 담임 · 역사체험 (10/27 전담)', kind: 'homeroom' },
-    { id: 'd-science', name: '과학정보부 · 실험실 안전', kind: 'duty' },
   ];
 
   // 2. 가동초 스타일: 처음 맡았다면 이렇게 해요 & 1년 월별 기안 흐름 & 실제 기안문 No 패키지
   const initialCards: HandoverCard[] = [
-    // 🌸 1학년 부장 (이기남 부장님)
+    // 🌸 1학년 부장
     {
       id: newId(),
       dutyId: 'd-grade1-lead',
       title: '1학년 부장 연간 실무 가이드 & 1년 기안 흐름',
-      personInCharge: '이기남 부장님 (2026학년도 1학년 부장)',
+      personInCharge: '1학년 부장 (학년대표)',
       locationPath: 'NAS2026 > 1학년연구실 > 학년운영',
       tips: `[1학년 부장 핵심 노하우]
 1. 입학식 직전(2월 말)에 신입생 사물함 바구니, 이름표, 책날개 도서 품의를 반드시 완료해야 개학 첫날 혼란이 없습니다.
@@ -48,7 +49,7 @@ export function buildJungdaeInitialData(): {
       firstTimeGuide: `처음 1학년 부장을 맡으셨다면 다음 순서로 흐름을 잡으세요:
 • 1~2월: 입학생 예비소집 결과 확인, 학급별 사물함/학용품 바구니 품의, 1학년 담임 오리엔테이션
 • 3월: 입학식 행사 기안, 1학년 1차 학년협의회(기안 No.2478), 입학생 안전 적응 교육
-• 5월: 입학 100일 잔치 및 우애남매 활동(5/7 기안 No.4873)
+• 5월: 입학 100일 잔치 및 우애남매 활동(기안 No.4873)
 • 7월/12월: 학기말 1학년 방학식 안내장 발송 및 2학기 교재 수합
 • 10월: 1학년 가을 현장체험학습(10/30) 안전 계획 수립 및 실시`,
       monthlyFlow: [
@@ -64,22 +65,22 @@ export function buildJungdaeInitialData(): {
         { month: 2, label: '2월', summary: '신입생 맞이 예비소집 및 입학식 준비', drafts: ['No.953 1학년 미술용품 구입', 'No.1525 신입생 사물함 및 바구니 구입'] }
       ],
       pastDrafts: [
-        { year: 2026, draftNo: 'No.11431', date: '2026-10-27', title: '2026학년도 11월 1학년 협의회 실시 계획', author: '이기남' },
-        { year: 2026, draftNo: 'No.10926', date: '2026-10-14', title: '2026학년도 1학년 2학기 학년 협의회 실시 계획', author: '이기남' },
-        { year: 2026, draftNo: 'No.8382', date: '2026-07-30', title: '(품의)2026학년도 1학년 학습준비물 구입', author: '이기남' },
-        { year: 2026, draftNo: 'No.4873', date: '2026-05-07', title: '2026학년도 1학년 입학 100일 기념 행사를 위한 물품 구입', author: '이기남' },
-        { year: 2026, draftNo: 'No.2244', date: '2026-03-05', title: '입학식 물품 추가 구입', author: '이기남' },
-        { year: 2026, draftNo: 'No.1525', date: '2026-02-19', title: '입학생 사물함 및 물품 구입', author: '이기남' }
+        { year: 2026, draftNo: 'No.11431', date: '2026-10-27', title: '2026학년도 11월 1학년 협의회 실시 계획', author: '1학년부장' },
+        { year: 2026, draftNo: 'No.10926', date: '2026-10-14', title: '2026학년도 1학년 2학기 학년 협의회 실시 계획', author: '1학년부장' },
+        { year: 2026, draftNo: 'No.8382', date: '2026-07-30', title: '(품의)2026학년도 1학년 학습준비물 구입', author: '1학년부장' },
+        { year: 2026, draftNo: 'No.4873', date: '2026-05-07', title: '2026학년도 1학년 입학 100일 기념 행사를 위한 물품 구입', author: '1학년부장' },
+        { year: 2026, draftNo: 'No.2244', date: '2026-03-05', title: '입학식 물품 추가 구입', author: '1학년부장' },
+        { year: 2026, draftNo: 'No.1525', date: '2026-02-19', title: '입학생 사물함 및 물품 구입', author: '1학년부장' }
       ],
       updatedAt: now,
     },
 
-    // 🏛️ 교무부장 · 1학년 담임 (이정선 부장님)
+    // 🏛️ 교무부장
     {
       id: newId(),
       dutyId: 'd-affairs-lead',
-      title: '교무부장 연간 학사항정 가이드 & 1년 기안 흐름',
-      personInCharge: '이정선 부장님 (교무부장 · 1학년 담임)',
+      title: '교무부장 연간 학사행정 가이드 & 1년 기안 흐름',
+      personInCharge: '교무부장 (교무기획 총괄)',
       locationPath: 'NAS2026 > 교무기획부 > 학사운영',
       tips: `[교무부장 핵심 노하우]
 1. 학사력은 12월 말에 초안이 나와야 차년도 2월 집중준비기간에 교육과정 편찬이 가능합니다.
@@ -105,25 +106,69 @@ export function buildJungdaeInitialData(): {
         { month: 12, label: '12월', summary: '겨울방학식 총괄, 신입생 전편입 원서접수', drafts: ['No.12693 2027학년도 학생 전편입 안내', 'No.13411 2027학년도 교육과정 총괄'] }
       ],
       pastDrafts: [
-        { year: 2026, draftNo: 'No.11495', date: '2026-10-28', title: '2026학년도 11월 학교운영계획 수립', author: '이정선' },
-        { year: 2026, draftNo: 'No.10230', date: '2026-09-23', title: '2026학년도 10월 학교운영계획 수립', author: '이정선' },
-        { year: 2026, draftNo: 'No.7658', date: '2026-07-14', title: '2026학년도 여름방학 및 8월 학교운영계획 수립', author: '이정선' },
-        { year: 2026, draftNo: 'No.2137', date: '2026-03-04', title: '2026학년도 중대부초 학사운영 기본방침', author: '이정선' }
+        { year: 2026, draftNo: 'No.11495', date: '2026-10-28', title: '2026학년도 11월 학교운영계획 수립', author: '교무부장' },
+        { year: 2026, draftNo: 'No.10230', date: '2026-09-23', title: '2026학년도 10월 학교운영계획 수립', author: '교무부장' },
+        { year: 2026, draftNo: 'No.7658', date: '2026-07-14', title: '2026학년도 여름방학 및 8월 학교운영계획 수립', author: '교무부장' },
+        { year: 2026, draftNo: 'No.2137', date: '2026-03-04', title: '2026학년도 중대부초 학사운영 기본방침', author: '교무부장' }
       ],
       updatedAt: now,
     },
 
-    // 💻 나이스 · 정보공시 · 감사교육 (박세원 선생님 - 본인!)
+    // 🔬 과학정보부장 (2025, 2026 연임 부장)
+    {
+      id: newId(),
+      dutyId: 'd-science-lead',
+      title: '과학정보부장 스마트정보화 & 전자칠판 실무 바이블',
+      personInCharge: '과학정보부장 (2025~2026 연임 부장)',
+      locationPath: 'NAS2026 > 과학정보부 > 정보화사업',
+      tips: `[과학정보부장 2개년 핵심 연간 노하우]
+1. [전자칠판]: 5월에 '전자칠판 물품선정위원회'(기안 No.5570, No.5697)를 반드시 개최하고, 6~7월에 조달청 나라장터 3단계 품의(기안 No.6494, No.7526)를 거쳐야 방학 중 설치 완료됩니다.
+2. [정보화기기/교원 PC]: 4월에 교원 데스크탑 수요조사(No.4396)를 하고, 노후 기기는 교육청 폐기 지침에 따라 10월에 일괄 불용 처리합니다.
+3. [학교 전산 인프라]: E알리미 라이선스 연장(No.2302)은 3월 첫 주, 캐노피 방송장비(No.3016) 점검은 개학 전 필수 점검!
+4. [AI 선도학교]: AI 교실 운영(No.601) 및 찾아가는 AI 맞춤형 직무연수(No.9961)는 학기초 교무협의회와 연계합니다.`,
+      firstTimeGuide: `과학정보부장을 처음 맡으셨다면 다음 정보화 사이클을 숙지하세요:
+• 1~2월: 컴퓨터실 노후 데스크탑 점검(No.957), E알리미 연간 라이선스 갱신 품의, AI 선도학교 연간 계획 수립(No.601)
+• 3월: 캐노피 방송시스템 정비(No.3016), 졸업앨범선정위원회 구성(No.2320), 교원 스마트기기 배정
+• 4월: 무선망 AP 점검(No.4105), 교원용 데스크탑 추가 신청(No.4396), 스마트패드 점검
+• 5월: 전자칠판 구매 계획(No.5526), 전자칠판 물품선정위원회 구성 및 평가(No.5570, No.5697), Adobe 라이선스 품의(No.5550)
+• 6~7월: 전자칠판 설치 품의(No.6494, No.6737, No.7526), 컴퓨터실 방학 중 유지보수 용역 계약
+• 9~10월: 2학기 학교 찾아가는 AI 직무연수(No.9961), 신입생 온라인 신청 프로그램 세팅(No.11101), 교원인사위원회(No.11439, No.11520)
+• 11~12월: 노후 정보화기기 불용 처리 및 폐기 기안, 차년도 정보화 예산 요구서 작성`,
+      monthlyFlow: [
+        { month: 3, label: '3월', summary: 'E알리미 갱신, 캐노피 방송점검, 졸업앨범선정위', drafts: ['No.2302 E알리미 라이선스 연장', 'No.2320 졸업앨범선정위원회 구성', 'No.3016 캐노피 방송시스템 점검'] },
+        { month: 4, label: '4월', summary: '무선 AP 점검, 교원 데스크탑 신청, 스마트패드 점검', drafts: ['No.4105 무선망 AP 교체설치', 'No.4396 교원용 데스크탑 신청', 'No.4408 정보화 소모품 구입'] },
+        { month: 5, label: '5월', summary: '전자칠판 물품선정위원회, Adobe 라이선스 품의', drafts: ['No.5526 전자칠판 구매 계획', 'No.5570 전자칠판 물품선정위 구성', 'No.5697 물품선정위 결과보고', 'No.5550 Adobe 라이선스 연장'] },
+        { month: 6, label: '6월', summary: '전자칠판 설치 품의, 노후 PC 교체, 6학년 졸업앨범', drafts: ['No.6494 전자칠판 설치 조달 품의', 'No.6737 전자칠판 부대공사 품의', 'No.7021 6학년 졸업앨범 촬영 계획'] },
+        { month: 7, label: '7월', summary: '전자칠판 2차 설치, 피아노건반 유지보수, AI캠프', drafts: ['No.7267 컴퓨터실 방학 중 보수', 'No.7526 전자칠판 추가설치 품의', 'No.7790 피아노건반 유지보수', 'No.7869 1학기 AI캠프 정산'] },
+        { month: 9, label: '9월', summary: '찾아가는 AI 맞춤형 연수, 2학기 전산 세팅', drafts: ['No.9961 찾아가는 AI 선도학교 연수', 'No.9175 신입생 온라인 접수 준비'] },
+        { month: 10, label: '10월', summary: '신입생 온라인 신청 프로그램 세팅, 교원인사위원회', drafts: ['No.11101 신입생 온라인 접수 프로그램 구입', 'No.11127 교원인사위 운영규칙', 'No.11439 교원인사위 결과보고', 'No.11520 인사위 회의록'] },
+        { month: 11, label: '11월', summary: '컴퓨터실 소모품 구입, 노후 기기 불용 처리', drafts: ['No.11394 정보화 소모품 추가구입', 'No.11120 컴퓨터실 기기 점검'] },
+        { month: 12, label: '12월', summary: '차년도 전자칠판/스마트기기 예산 요구, 전산 백업', drafts: ['No.12877 중대부초 전산망 백업', 'No.13404 차년도 전자칠판 예산 요구'] },
+        { month: 2, label: '2월', summary: '신학년 컴퓨터실 정비, 데스크탑 유지보수 용역', drafts: ['No.613 캐노피 방송 데스크탑 교체', 'No.957 컴퓨터실 기기 유지보수'] }
+      ],
+      pastDrafts: [
+        { year: 2026, draftNo: 'No.11520', date: '2026-10-28', title: '2026학년도 교원인사위원회 회의록 - 교원인사위원회 운영 규칙 개정', author: '과학정보부장' },
+        { year: 2026, draftNo: 'No.11101', date: '2026-10-19', title: '2026학년도 신입생온라인신청프로그램 구매 건', author: '과학정보부장' },
+        { year: 2026, draftNo: 'No.9961', date: '2026-09-15', title: '2026 중대부초 학교로 찾아가는 AI 활용 맞춤형 직무연수 결과 보고', author: '과학정보부장' },
+        { year: 2026, draftNo: 'No.7526', date: '2026-07-09', title: '2026학년도 전자칠판 설치 부대공사 품의 요청', author: '과학정보부장' },
+        { year: 2026, draftNo: 'No.5697', date: '2026-05-23', title: '2026학년도 전자칠판 물품선정위원회 결과 보고', author: '과학정보부장' },
+        { year: 2026, draftNo: 'No.5570', date: '2026-05-20', title: '2026학년도 전자칠판 물품선정위원회 구성 및 계획', author: '과학정보부장' },
+        { year: 2026, draftNo: 'No.2302', date: '2026-03-06', title: '2026학년도 E알리미 라이선스 구매 건', author: '과학정보부장' }
+      ],
+      updatedAt: now,
+    },
+
+    // 💻 나이스 · 정보공시 · 감사교육
     {
       id: newId(),
       dutyId: 'd-neis-info',
       title: '나이스 · 정보공시 · 월별 감사교육 실무 바이블',
-      personInCharge: '박세원 선생님 (나이스 · 정보공시 · 월별 감사교육 담당)',
+      personInCharge: '나이스 · 정보공시 · 감사교육 담당',
       locationPath: 'NAS2026 > 과학정보부 > 나이스정보공시',
-      tips: `[박세원 선생님 전담 업무 핵심 팁]
+      tips: `[나이스/정보공시/감사교육 핵심 팁]
 1. [나이스 권한]: 3월 첫 주에 전 교원 권한 부여 및 인증서 재발급(No.2188, No.2819)을 끝내야 담임선생님들 출결 입력이 안 막힙니다.
 2. [정보공시]: 4월 1차(학교 기본현황/수업시수)와 9~10월 2차(예결산/안전) 정시공시는 마감 3일 전 부서별 수합 완료 후 교장 결재를 올려야 지연이 안 생깁니다.
-3. [월별 감사교육]: 5월 어버이날/스승의날 연계 '감사 편지 쓰기 주간'과 연말 감사나눔 행사는 사진 촬영 후 홈페이지 및 뉴스레터 탑재까지 완료합니다.
+3. [월별 감사교육]: 5월 가정의 달 맞이 '감사 편지 쓰기 주간'과 연말 감사나눔 행사는 사진 촬영 후 홈페이지 및 뉴스레터 탑재까지 완료합니다.
 4. ⚠️ 4세대 나이스 오류 시 교육청 콜센터 대기보다 [나이스 사용자 지원서비스] FAQ와 공지사항 검색이 10배 빠릅니다.`,
       firstTimeGuide: `나이스, 정보공시, 감사교육을 처음 맡았을 때의 핵심 연간 루틴:
 • 3월: 전 교원 나이스 인증서 신규/재발급 신청 기안 (No.2188), 나이스 권한관리 체계 수립, 3월 감사인사 나눔
@@ -145,24 +190,24 @@ export function buildJungdaeInitialData(): {
         { month: 2, label: '2월', summary: '차년도 신입생/진급자 나이스 반편성 작업 총괄', drafts: ['No.915 나이스 신규교원 인증서 발급', 'No.1639 나이스 반편성 권한 이양'] }
       ],
       pastDrafts: [
-        { year: 2026, draftNo: 'No.10817', date: '2026-10-12', title: '2026년 하반기 학교 나이스 권한관리 자체점검 실시', author: '박세원' },
-        { year: 2026, draftNo: 'No.10501', date: '2026-09-30', title: '2026년도 학교정보공시 2차 정시공시 제출', author: '박세원' },
-        { year: 2026, draftNo: 'No.9623', date: '2026-09-08', title: '중대부초 나이스 인증서 재발급 신청', author: '박세원' },
-        { year: 2026, draftNo: 'No.3522', date: '2026-03-31', title: '2026년도 1차 학교정보공시 사전 데이터 수합 요청', author: '박세원' },
-        { year: 2026, draftNo: 'No.2805', date: '2026-03-16', title: '2026년 상반기 중대부초 나이스 권한관리 자체점검 결과보고', author: '박세원' },
-        { year: 2026, draftNo: 'No.2188', date: '2026-03-04', title: '중대부초 나이스 인증서 재발급 신청', author: '박세원' }
+        { year: 2026, draftNo: 'No.10817', date: '2026-10-12', title: '2026년 하반기 학교 나이스 권한관리 자체점검 실시', author: '정보담당' },
+        { year: 2026, draftNo: 'No.10501', date: '2026-09-30', title: '2026년도 학교정보공시 2차 정시공시 제출', author: '정보담당' },
+        { year: 2026, draftNo: 'No.9623', date: '2026-09-08', title: '중대부초 나이스 인증서 재발급 신청', author: '정보담당' },
+        { year: 2026, draftNo: 'No.3522', date: '2026-03-31', title: '2026년도 1차 학교정보공시 사전 데이터 수합 요청', author: '정보담당' },
+        { year: 2026, draftNo: 'No.2805', date: '2026-03-16', title: '2026년 상반기 중대부초 나이스 권한관리 자체점검 결과보고', author: '정보담당' },
+        { year: 2026, draftNo: 'No.2188', date: '2026-03-04', title: '중대부초 나이스 인증서 재발급 신청', author: '정보담당' }
       ],
       updatedAt: now,
     },
 
-    // 📖 4학년 담임 · 교지 '중앙동산' (김하정 선생님)
+    // 📖 4학년 담임 · 교지 '중앙동산'
     {
       id: newId(),
       dutyId: 'd-grade4-magazine',
       title: '4학년 학급경영 & 교지 중앙동산 발간 실전 매뉴얼',
-      personInCharge: '김하정 선생님 (4학년 담임 · 교지 중앙동산 담당)',
+      personInCharge: '4학년 담임 · 교지 중앙동산 편집담당',
       locationPath: 'NAS2026 > 4학년연구실 > 교지중앙동산',
-      tips: `[김하정 선생님 교지 및 4학년 핵심 노하우]
+      tips: `[교지 및 4학년 핵심 노하우]
 1. [교지 중앙동산]: 인쇄소 계약 및 조판 일정은 6월에 1차 원고 마감, 7월에 제작비 1차 지급(No.7649 스타일)을 해야 연말 12월에 안전하게 발행됩니다.
 2. [원고 수합]: 전교생 및 교직원 글짓기/그림 원고는 9월 말까지 취합하고, 교정 교열은 10~11월에 3교까지 꼼꼼히 봅니다.
 3. [4학년 현장체험]: 10월 20일(화) 4학년 가을 현장체험학습은 9월 초(출발 6주 전)에 버스 견적 품의를 마쳐야 합니다.`,
@@ -185,11 +230,11 @@ export function buildJungdaeInitialData(): {
         { month: 1, label: '1월', summary: '중앙동산 114호 제작비 잔금 지급 정산', drafts: ['No.763 중앙동산 113호 제작비 정산(작년 기준)', 'No.650 4학년 진급서류 정리'] }
       ],
       pastDrafts: [
-        { year: 2026, draftNo: 'No.9753', date: '2026-09-10', title: '2026학년도 2학기 4,6학년 미술 용품 추가 주문 품의서', author: '김하정' },
-        { year: 2026, draftNo: 'No.9718', date: '2026-09-09', title: '2026학년도 2학기 4,6학년 미술 용품 추가 구입 요청', author: '김하정' },
-        { year: 2026, draftNo: 'No.7649', date: '2026-07-13', title: '중앙동산 114호 제작비 지급', author: '김하정' },
-        { year: 2026, draftNo: 'No.6615', date: '2026-06-17', title: '2026학년도 1학기 4,6학년 미술 용품 추가 구입 요청', author: '김하정' },
-        { year: 2026, draftNo: 'No.763', date: '2026-01-30', title: '중앙동산 113호 제작비 지급', author: '김하정' }
+        { year: 2026, draftNo: 'No.9753', date: '2026-09-10', title: '2026학년도 2학기 4,6학년 미술 용품 추가 주문 품의서', author: '교지담당' },
+        { year: 2026, draftNo: 'No.9718', date: '2026-09-09', title: '2026학년도 2학기 4,6학년 미술 용품 추가 구입 요청', author: '교지담당' },
+        { year: 2026, draftNo: 'No.7649', date: '2026-07-13', title: '중앙동산 114호 제작비 지급', author: '교지담당' },
+        { year: 2026, draftNo: 'No.6615', date: '2026-06-17', title: '2026학년도 1학기 4,6학년 미술 용품 추가 구입 요청', author: '교지담당' },
+        { year: 2026, draftNo: 'No.763', date: '2026-01-30', title: '중앙동산 113호 제작비 지급', author: '교지담당' }
       ],
       updatedAt: now,
     },
@@ -199,7 +244,7 @@ export function buildJungdaeInitialData(): {
       id: newId(),
       dutyId: 'd-homeroom-5',
       title: '5학년 담임 연간 생존 요령 & 10/27 역사체험 복붙 패키지',
-      personInCharge: '5학년 담임교사 (2학기 역사 현장체험학습 전담)',
+      personInCharge: '5학년 담임 (역사체험 전담)',
       locationPath: 'NAS2026 > 5학년연구실 > 역사체험학습',
       tips: `[10/27 5학년 역사체험학습 핵심 팁]
 1. 버스 계약: 9월 중순(출발 6주 전)에 버스 견적 2곳 받아야 행정실 품의가 안 밀립니다.
@@ -230,7 +275,7 @@ export function buildJungdaeInitialData(): {
 
   // 3. 1년 업무 지도 타임라인에 꽂힐 실제 Tasks
   const initialTasks: Task[] = [
-    // 🌸 1학년 부장 (이기남 부장님)
+    // 🌸 1학년 부장
     {
       id: newId(),
       dutyId: 'd-grade1-lead',
@@ -274,7 +319,7 @@ export function buildJungdaeInitialData(): {
       updatedAt: now,
     },
 
-    // 🏛️ 교무부장 (이정선 부장님)
+    // 🏛️ 교무부장
     {
       id: newId(),
       dutyId: 'd-affairs-lead',
@@ -304,7 +349,37 @@ export function buildJungdaeInitialData(): {
       updatedAt: now,
     },
 
-    // 💻 나이스 · 정보공시 · 감사교육 (박세원 선생님 - 본인!)
+    // 🔬 과학정보부장
+    {
+      id: newId(),
+      dutyId: 'd-science-lead',
+      title: '2026학년도 전자칠판 구매 계획 수립 및 물품선정위원회 개최 (No.5526, No.5570, No.5697)',
+      dueDate: '2026-05-20',
+      status: 'confirmed',
+      origin: 'sample',
+      note: '교실 스마트화 전자칠판 도입을 위한 위원회 평가 및 조달청 나라장터 3단계 품의 사전 결재',
+      checklist: [{ id: newId(), text: '교원/학부모 물품선정위원 위촉', done: false }, { id: newId(), text: '규격서 및 제안서 평가표 작성', done: false }],
+      sources: [{ docTitle: '중대부초 기안문서 No.5570', verified: true, excerpt: '2026학년도 전자칠판 물품선정위원회 구성 및 계획' }],
+      locationPath: 'NAS2026 > 과학정보부 > 전자칠판',
+      done: false,
+      updatedAt: now,
+    },
+    {
+      id: newId(),
+      dutyId: 'd-science-lead',
+      title: '2026학년도 신입생 온라인 신청 프로그램 구매 및 캐노피 방송장비 점검 (No.3016, No.11101)',
+      dueDate: '2026-10-19',
+      status: 'confirmed',
+      origin: 'sample',
+      note: '차년도 신입생 원서접수 온라인 시스템 세팅 및 학교 방송시설 음향 점검 완료',
+      checklist: [{ id: newId(), text: '전산 시스템 라이선스 품의', done: false }, { id: newId(), text: '서버 보안 점검', done: false }],
+      sources: [{ docTitle: '중대부초 기안문서 No.11101', verified: true, excerpt: '2026학년도 신입생온라인신청프로그램 구매 건' }],
+      locationPath: 'NAS2026 > 과학정보부 > 정보화사업',
+      done: false,
+      updatedAt: now,
+    },
+
+    // 💻 나이스 · 정보공시 · 감사교육
     {
       id: newId(),
       dutyId: 'd-neis-info',
@@ -348,7 +423,7 @@ export function buildJungdaeInitialData(): {
       updatedAt: now,
     },
 
-    // 📖 4학년 담임 · 교지 중앙동산 (김하정 선생님)
+    // 📖 4학년 담임 · 교지 중앙동산
     {
       id: newId(),
       dutyId: 'd-grade4-magazine',

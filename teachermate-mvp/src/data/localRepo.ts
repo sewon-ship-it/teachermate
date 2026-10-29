@@ -3,7 +3,7 @@ import { buildJungdaeInitialData } from './jungdaeData';
 import { hasBlockingPii } from '../lib/piiGuard';
 import { PiiBlockedError, type Repo } from './repo';
 
-const KEY = 'teachermate:jungdae:v4';
+const KEY = 'teachermate:jungdae:v5';
 
 /**
  * 로컬 체험 모드 (중대부초 2026학년도 실제 학사력·업무분장 탑재)
