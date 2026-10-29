@@ -137,11 +137,83 @@ export function Handover({ cards, duties, tasks, schoolName, onSave, onDelete }:
           const count = tasks.filter((t) => t.dutyId === c.dutyId && t.status === 'confirmed').length;
           return (
             <article key={c.id} className="handover-card">
-              <header>
-                {duty && <span className="duty-tag">{duty.name}</span>}
-                <h2>{c.title}</h2>
+              <header style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', alignItems: 'flex-start' }}>
+                <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
+                  {duty && <span className="duty-tag" style={{ background: '#e0f2fe', color: '#0369a1', fontWeight: 600 }}>{duty.name}</span>}
+                  {c.personInCharge && (
+                    <span style={{ fontSize: '0.78rem', background: '#fef3c7', color: '#92400e', padding: '0.2rem 0.5rem', borderRadius: '4px', fontWeight: 600 }}>
+                      👤 {c.personInCharge}
+                    </span>
+                  )}
+                </div>
+                <h2 style={{ margin: '0.3rem 0', fontSize: '1.25rem', color: '#0f172a' }}>{c.title}</h2>
               </header>
-              <p className="tips">{c.tips || '요령이 비어 있다.'}</p>
+
+              {/* 🌟 가동초 스타일 1: 처음 맡았다면 · 이렇게 해요 */}
+              {c.firstTimeGuide && (
+                <details open style={{ margin: '0.75rem 0', border: '1px solid #fed7aa', borderRadius: '8px', background: '#fffaf5', padding: '0.6rem 0.8rem' }}>
+                  <summary style={{ fontWeight: 700, color: '#c2410c', cursor: 'pointer', fontSize: '0.92rem' }}>
+                    💡 처음 맡았다면 · 이렇게 해요 (전임자 핵심 조언)
+                  </summary>
+                  <div style={{ marginTop: '0.5rem', fontSize: '0.86rem', color: '#334155', lineHeight: 1.6, whiteSpace: 'pre-line' }}>
+                    {c.firstTimeGuide}
+                  </div>
+                </details>
+              )}
+
+              {/* 🌟 가동초 스타일 2: 작년·올해 비교로 본 월별 기안 흐름 */}
+              {c.monthlyFlow && c.monthlyFlow.length > 0 && (
+                <details style={{ margin: '0.75rem 0', border: '1px solid #e2e8f0', borderRadius: '8px', background: '#f8fafc', padding: '0.6rem 0.8rem' }}>
+                  <summary style={{ fontWeight: 700, color: '#1e293b', cursor: 'pointer', fontSize: '0.92rem' }}>
+                    🗓️ 1년 월별 기안 흐름 (3월~2월 실전 기안 타임라인)
+                  </summary>
+                  <div style={{ marginTop: '0.6rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                    {c.monthlyFlow.map((m) => (
+                      <div key={m.month} style={{ display: 'flex', gap: '0.6rem', fontSize: '0.84rem', padding: '0.4rem', borderBottom: '1px dashed #cbd5e1' }}>
+                        <span style={{ minWidth: '36px', fontWeight: 700, color: '#2563eb' }}>{m.label}</span>
+                        <div style={{ flex: 1 }}>
+                          <div style={{ color: '#0f172a', fontWeight: 500 }}>{m.summary}</div>
+                          {m.drafts && m.drafts.length > 0 && (
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.3rem', marginTop: '0.25rem' }}>
+                              {m.drafts.map((d, di) => (
+                                <span key={di} style={{ fontSize: '0.75rem', background: '#e2e8f0', color: '#475569', padding: '0.1rem 0.4rem', borderRadius: '4px' }}>
+                                  📄 {d}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </details>
+              )}
+
+              {/* 🌟 가동초 스타일 3: 2026학년도 실제 기안문 No 목록 (에듀파인 연계) */}
+              {c.pastDrafts && c.pastDrafts.length > 0 && (
+                <details style={{ margin: '0.75rem 0', border: '1px solid #cbd5e1', borderRadius: '8px', background: '#ffffff', padding: '0.6rem 0.8rem' }}>
+                  <summary style={{ fontWeight: 700, color: '#334155', cursor: 'pointer', fontSize: '0.92rem' }}>
+                    📑 에듀파인 기안문서 대조표 ({c.pastDrafts.length}건 수록)
+                  </summary>
+                  <ul style={{ margin: '0.5rem 0 0 0', paddingLeft: '1.2rem', fontSize: '0.84rem', color: '#475569' }}>
+                    {c.pastDrafts.map((pd, pi) => (
+                      <li key={pi} style={{ margin: '0.25rem 0' }}>
+                        <strong style={{ color: '#2563eb' }}>{pd.draftNo}</strong> ({pd.date}) · {pd.title}
+                        {pd.author && <span style={{ color: '#64748b' }}> (기안: {pd.author})</span>}
+                      </li>
+                    ))}
+                  </ul>
+                </details>
+              )}
+
+              {/* 기본 요령 및 팁 */}
+              <div style={{ margin: '0.75rem 0', padding: '0.6rem 0.8rem', background: '#f1f5f9', borderRadius: '6px' }}>
+                <div style={{ fontSize: '0.82rem', fontWeight: 700, color: '#475569', marginBottom: '0.3rem' }}>📌 전임자 생존 꿀팁 & 복붙 패키지:</div>
+                <p className="tips" style={{ margin: 0, whiteSpace: 'pre-line', fontSize: '0.86rem', color: '#1e293b' }}>
+                  {c.tips || '요령이 비어 있다.'}
+                </p>
+              </div>
+
               {c.locationPath && (
                 <p className="location">
                   <span>{c.locationPath}</span>

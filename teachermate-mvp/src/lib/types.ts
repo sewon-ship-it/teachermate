@@ -43,6 +43,22 @@ export interface Task {
   updatedAt: string;
 }
 
+export interface MonthlyFlowItem {
+  month: number;
+  label: string;
+  summary: string;
+  drafts: string[];
+}
+
+export interface PastDraftItem {
+  year: number;
+  draftNo: string;
+  date: string;
+  title: string;
+  author?: string;
+  note?: string;
+}
+
 export interface HandoverCard {
   id: string;
   dutyId: string | null;
@@ -50,6 +66,11 @@ export interface HandoverCard {
   tips: string;
   locationPath: string;
   updatedAt: string;
+  // 가동초 스타일 확장 필드
+  firstTimeGuide?: string; // 처음 맡았다면 · 이렇게 해요
+  monthlyFlow?: MonthlyFlowItem[]; // 작년·올해 비교로 본 월별 기안 흐름
+  pastDrafts?: PastDraftItem[]; // 2025~2026학년도 실제 기안문 No 목록
+  personInCharge?: string; // 담당 교사/부장님 (예: 이기남 부장님)
 }
 
 export interface AppData {
