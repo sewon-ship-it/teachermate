@@ -8,6 +8,7 @@ import { scanPiiForEvents } from '../lib/piiGuard';
 import { formatKoreanDate, schoolYearOf } from '../lib/dates';
 import { newId } from '../lib/id';
 import { PiiNotice } from './ui';
+import { getUploadedDocs, addUploadedDoc, removeUploadedDoc, type UploadedDoc } from '../lib/uploadedDocs';
 
 const SAMPLE = `3.2.(월) 입학식 및 시업식
 3.13.(금) 학부모 총회
@@ -36,6 +37,7 @@ export function CalendarImport({ duties, today, onAdd }: Props) {
   const [aiConsent, setAiConsent] = useState(false);
   const [aiBusy, setAiBusy] = useState(false);
   const [addedCount, setAddedCount] = useState<number | null>(null);
+  const [uploadedDocs, setUploadedDocs] = useState<UploadedDoc[]>(getUploadedDocs);
 
   const fileRef = useRef<HTMLInputElement>(null);
   const sy = schoolYearOf(today);
@@ -157,6 +159,16 @@ export function CalendarImport({ duties, today, onAdd }: Props) {
 
     await onAdd(tasks);
     setAddedCount(tasks.length);
+
+    // 업로드 문서함에 반영 기록 영구 저장
+    addUploadedDoc({
+      fileName: fileName || `${sy}학년도 학사력`,
+      fileType: fileName.endsWith('.xlsx') ? 'excel' : 'pdf',
+      itemCount: tasks.length,
+      description: `${sy}학년도 학사 일정 (${tasks.length}건 1년 업무 지도에 반영됨)`
+    });
+    setUploadedDocs(getUploadedDocs());
+
     setItems([]);
     setRawText('');
   };
@@ -209,6 +221,58 @@ export function CalendarImport({ duties, today, onAdd }: Props) {
         </div>
       </div>
 
+      {/* 현재 업로드 및 반영된 파일 보관함 */}
+      <div style={{ background: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '10px', padding: '16px', marginBottom: '20px' }}>
+        <h3 style={{ margin: '0 0 10px', fontSize: '15px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <span>📂</span> 현재 반영된 학사·업무 파일 보관함 ({uploadedDocs.length}개)
+        </h3>
+        <p className="hint" style={{ margin: '0 0 12px' }}>
+          선생님께서 업로드하여 1년 업무 지도에 반영된 파일들입니다. 브라우저를 닫았다가 다시 열어도 그대로 안전하게 유지됩니다.
+        </p>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '10px' }}>
+          {uploadedDocs.map((doc) => (
+            <div
+              key={doc.id}
+              style={{
+                background: '#fff',
+                border: '1px solid #e2e8f0',
+                borderRadius: '8px',
+                padding: '12px 14px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '4px',
+                boxShadow: '0 1px 2px rgba(0,0,0,0.04)'
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <strong style={{ fontSize: '14px', color: '#0f172a' }}>
+                  {doc.fileType === 'pdf' ? '📄' : doc.fileType === 'excel' ? '📊' : '📝'} {doc.fileName}
+                </strong>
+                <button
+                  type="button"
+                  className="btn-link"
+                  style={{ fontSize: '12px', color: '#ef4444' }}
+                  onClick={() => {
+                    if (confirm(`'${doc.fileName}' 기록을 보관함에서 삭제하시겠습니까?`)) {
+                      removeUploadedDoc(doc.id);
+                      setUploadedDocs(getUploadedDocs());
+                    }
+                  }}
+                >
+                  삭제
+                </button>
+              </div>
+              <span style={{ fontSize: '12px', color: '#16a34a', fontWeight: 600 }}>
+                ✅ {doc.itemCount}건 1년 업무 지도 반영 완료
+              </span>
+              <span style={{ fontSize: '11px', color: '#94a3b8' }}>
+                반영일시: {new Date(doc.uploadedAt).toLocaleString('ko-KR')}
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+
       {/* 상단 서브 탭 */}
       <div className="tab-bar">
         <button
@@ -216,7 +280,7 @@ export function CalendarImport({ duties, today, onAdd }: Props) {
           className={`tab-btn ${tab === 'file' ? 'active' : ''}`}
           onClick={() => setTab('file')}
         >
-          📁 파일 올리기 (PDF · 엑셀 · 이미지)
+          📁 새 학사력 파일 올리기 (PDF · 엑셀 · 이미지)
         </button>
         <button
           type="button"

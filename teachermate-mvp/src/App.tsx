@@ -221,6 +221,7 @@ function Workspace({ repo, school, signOut, onCreateInvite }: WorkspaceProps) {
               tasks={data.tasks}
               cards={data.cards}
               duties={data.duties}
+              events={JUNGDAE_EVENTS_2026}
               onJumpTask={handleChatJump}
             />
           )}

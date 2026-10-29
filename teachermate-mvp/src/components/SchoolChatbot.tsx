@@ -1,11 +1,13 @@
 import { useEffect, useRef, useState } from 'react';
 import type { Duty, HandoverCard, Task } from '../lib/types';
-import { searchLocal, type ChatAnswer } from '../lib/chatSearch';
+import type { JungdaeEvent } from '../data/jungdaeData';
+import { searchLocal, askClaudeApi, type ChatAnswer } from '../lib/chatSearch';
 
 interface Props {
   tasks: Task[];
   cards: HandoverCard[];
   duties: Duty[];
+  events?: JungdaeEvent[];
   onJumpTask?: (taskId: string) => void;
 }
 
@@ -14,89 +16,138 @@ interface Message {
   role: 'user' | 'bot';
   text: string;
   answer?: ChatAnswer;
+  isAi?: boolean;
 }
 
 const EXAMPLES = [
-  '현장체험학습은 언제야?',
-  '교지 제출 마감이 언제야?',
-  '정보 담당 인수인계 요령 알려줘',
-  '이번 달 확정된 일 뭐가 있어?',
+  '5학년 역사체험 언제야?',
+  '우애남매 활동 언제야?',
+  '학부모 수업공개 언제야?',
+  '과학의 날 행사 언제야?',
+  '나이스 생기부 마감 언제야?',
 ];
 
 let msgSeq = 0;
 const mid = () => String(++msgSeq);
 
-export function SchoolChatbot({ tasks, cards, duties, onJumpTask }: Props) {
+export function SchoolChatbot({ tasks, cards, duties, events = [], onJumpTask }: Props) {
   const [messages, setMessages] = useState<Message[]>([
     {
       id: mid(),
       role: 'bot',
-      text: '안녕하세요! 저장된 할 일과 인수인계 카드 범위에서만 답합니다. 근거가 없으면 "확인 필요"로 표시해요.',
+      text: '안녕하세요! 중대부초 2026학년도 학사력 및 업무 인수인계 전담 비서입니다.\n"5학년 역사체험 언제야?", "우애남매 활동 언제야?"처럼 질문하시면 정확한 일정을 안내해 드립니다.',
     },
   ]);
   const [input, setInput] = useState('');
+  const [isTyping, setIsTyping] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+  }, [messages, isTyping]);
 
-  const send = (q: string) => {
+  const send = async (q: string) => {
     const query = q.trim();
-    if (!query) return;
+    if (!query || isTyping) return;
+
     const userMsg: Message = { id: mid(), role: 'user', text: query };
-    const answer = searchLocal(query, tasks, cards, duties);
+    setMessages((prev) => [...prev, userMsg]);
+    setInput('');
+    setIsTyping(true);
+
+    // 1. 로컬 기반 정확한 데이터 검색
+    const answer = searchLocal(query, tasks, cards, duties, events);
+
+    // 2. Claude API 키 확인
+    const apiKey = localStorage.getItem('tm_claude_api_key') || localStorage.getItem('tm_api_key') || '';
+    let finalBotText = answer.answer;
+    let isAiResponse = false;
+
+    if (apiKey) {
+      const contextBlob = [
+        ...events.map((e) => `[행사] ${e.date} ${e.title}`),
+        ...tasks.map((t) => `[업무] ${t.dueDate ?? '일정미정'} ${t.title} ${t.note}`),
+        ...cards.map((c) => `[인수인계] ${c.title}: ${c.tips}`)
+      ].join('\n');
+
+      const aiText = await askClaudeApi(query, apiKey, contextBlob);
+      if (aiText) {
+        finalBotText = aiText;
+        isAiResponse = true;
+      }
+    }
+
     const botMsg: Message = {
       id: mid(),
       role: 'bot',
-      text: answer.uncertain
-        ? answer.answer
-        : answer.answer,
+      text: finalBotText,
       answer,
+      isAi: isAiResponse,
     };
-    setMessages((prev) => [...prev, userMsg, botMsg]);
-    setInput('');
+
+    setMessages((prev) => [...prev, botMsg]);
+    setIsTyping(false);
   };
 
-  const confirmedCount = tasks.filter((t) => t.status === 'confirmed').length;
-  const cardCount = cards.length;
-
   return (
-    <section className="panel" style={{ maxWidth: 720 }}>
-      <h1>🏫 학교 업무 챗봇</h1>
+    <section className="panel" style={{ maxWidth: 760 }}>
+      <h1 style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <span>🏫</span> 중대부초 업무 챗봇
+      </h1>
       <p className="lead">
-        저장된 확정 할 일 <strong>{confirmedCount}건</strong>과 인수인계 카드{' '}
-        <strong>{cardCount}개</strong> 범위에서만 답한다. 근거가 없으면 확인 필요로 표시한다.
-        외부 AI를 사용하지 않는다.
+        중대부초 2026학년도 실제 학사력(199건)과 업무 인수인계 자료를 바탕으로 답변합니다.
       </p>
 
-      {confirmedCount === 0 && cardCount === 0 && (
-        <div className="notice notice-warn">
-          아직 확정된 할 일과 인수인계 카드가 없다. 먼저 학사력을 불러오거나 업무 자료를 추가해서 할 일을 확정한다.
-        </div>
-      )}
+      {/* 추천 질문 칩 */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', marginBottom: '14px' }}>
+        <span style={{ fontSize: '12px', fontWeight: 700, color: '#64748b' }}>추천 질문:</span>
+        {EXAMPLES.map((ex, i) => (
+          <button
+            key={i}
+            type="button"
+            className="chip"
+            style={{ fontSize: '12px', padding: '4px 10px', background: '#f1f5f9', border: '1px solid #cbd5e1', cursor: 'pointer', borderRadius: '12px' }}
+            onClick={() => send(ex)}
+          >
+            {ex}
+          </button>
+        ))}
+      </div>
 
       <div className="chatbot">
-        <div className="chat-messages" role="log" aria-live="polite" aria-label="대화 내용">
+        <div className="chat-messages" role="log" aria-live="polite" aria-label="대화 내용" style={{ minHeight: '340px' }}>
           {messages.map((m) => (
             <div key={m.id} className={`chat-bubble ${m.role}${m.answer?.uncertain ? ' uncertain' : ''}`}>
-              {m.role === 'bot' && m.answer?.uncertain && (
-                <div><span className="chat-uncertain-badge">⚠️ 확인 필요</span></div>
+              {m.role === 'bot' && (
+                <div style={{ marginBottom: '4px' }}>
+                  {m.isAi ? (
+                    <span style={{ fontSize: '11px', background: '#e0f2fe', color: '#0369a1', padding: '2px 6px', borderRadius: '4px', fontWeight: 700 }}>
+                      🤖 Claude AI 실시간 응답
+                    </span>
+                  ) : m.answer?.uncertain ? (
+                    <span className="chat-uncertain-badge">⚠️ 확인 필요</span>
+                  ) : (
+                    <span style={{ fontSize: '11px', background: '#f0fdf4', color: '#16a34a', padding: '2px 6px', borderRadius: '4px', fontWeight: 700 }}>
+                      📋 중대부초 학사 데이터 일치
+                    </span>
+                  )}
+                </div>
               )}
-              <pre style={{ margin: 0, whiteSpace: 'pre-wrap', fontFamily: 'inherit', fontSize: 'inherit' }}>
+              <pre style={{ margin: 0, whiteSpace: 'pre-wrap', fontFamily: 'inherit', fontSize: 'inherit', lineHeight: 1.55 }}>
                 {m.text}
               </pre>
               {m.answer && !m.answer.uncertain && m.answer.sources.length > 0 && (
-                <div className="chat-sources">
-                  <span className="muted" style={{ fontSize: '.75rem' }}>📎 근거</span>
-                  {m.answer.sources.map((s) => (
-                    <div key={s.id} className="chat-source-item">
-                      <strong>{s.type === 'task' ? '📅 할 일' : '🤝 카드'}</strong>{' · '}{s.label}
+                <div className="chat-sources" style={{ marginTop: '10px', paddingTop: '8px', borderTop: '1px dashed #cbd5e1' }}>
+                  <span className="muted" style={{ fontSize: '.75rem', fontWeight: 700 }}>📎 관련 근거 목록</span>
+                  {m.answer.sources.map((s, idx) => (
+                    <div key={idx} className="chat-source-item" style={{ fontSize: '12.5px', marginTop: '4px' }}>
+                      <strong>{s.type === 'event' ? '📅 학사 행사' : s.type === 'task' ? '✍️ 업무' : '🤝 카드'}</strong>
+                      {' · '}{s.label}
                       {s.type === 'task' && onJumpTask && (
                         <button
                           type="button"
                           className="btn-link"
-                          style={{ marginLeft: '.4rem' }}
+                          style={{ marginLeft: '.4rem', fontSize: '12px' }}
                           onClick={() => onJumpTask(s.id)}
                         >
                           타임라인에서 보기 →
@@ -108,43 +159,32 @@ export function SchoolChatbot({ tasks, cards, duties, onJumpTask }: Props) {
               )}
             </div>
           ))}
+          {isTyping && (
+            <div className="chat-bubble bot" style={{ color: '#64748b', fontSize: '13px' }}>
+              중대부초 업무 자료를 확인하고 있습니다…
+            </div>
+          )}
           <div ref={bottomRef} />
         </div>
 
-        {/* 예시 버튼 */}
-        {messages.length <= 1 && (
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '.35rem', marginBottom: '.5rem' }}>
-            {EXAMPLES.map((ex) => (
-              <button
-                key={ex}
-                type="button"
-                className="btn btn-small"
-                onClick={() => send(ex)}
-              >
-                {ex}
-              </button>
-            ))}
-          </div>
-        )}
-
-        <div className="chat-input-row">
+        <form
+          className="chat-form"
+          onSubmit={(e) => {
+            e.preventDefault();
+            send(input);
+          }}
+        >
           <input
+            placeholder="예: 5학년 역사체험 언제야?, 우애남매 활동 언제야?"
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder="예: 현장체험학습 날짜가 언제야?"
-            aria-label="질문 입력"
-            onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(input); } }}
+            disabled={isTyping}
+            aria-label="챗봇 질문 입력"
           />
-          <button
-            type="button"
-            className="btn btn-primary"
-            disabled={!input.trim()}
-            onClick={() => send(input)}
-          >
-            전송
+          <button type="submit" className="btn btn-primary" disabled={!input.trim() || isTyping}>
+            보내기
           </button>
-        </div>
-        <p className="hint">저장된 데이터 안에서만 답한다. 근거를 찾으면 항목을 직접 열 수 있다.</p>
+        </form>
       </div>
     </section>
   );
